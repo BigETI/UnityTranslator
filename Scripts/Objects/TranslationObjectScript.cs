@@ -33,6 +33,10 @@ namespace UnityTranslator.Objects
         {
             get
             {
+                if (translation == null)
+                {
+                    translation = new TranslationData();
+                }
                 return translation;
             }
         }
@@ -62,7 +66,7 @@ namespace UnityTranslator.Objects
             int ret = 1;
             if (other != null)
             {
-                ret = translation.CompareTo(other.translation);
+                ret = Translation.CompareTo(other.Translation);
             }
             return ret;
         }
@@ -73,7 +77,7 @@ namespace UnityTranslator.Objects
         /// <returns>String representation</returns>
         public override string ToString()
         {
-            return translation.ToString();
+            return Translation.ToString();
         }
     }
 }

@@ -31,6 +31,10 @@ namespace UnityTranslator.Data
         {
             get
             {
+                if (texts == null)
+                {
+                    texts = new TranslatedTextData[] { new TranslatedTextData() };
+                }
                 return texts;
             }
         }
@@ -60,7 +64,7 @@ namespace UnityTranslator.Data
             if (lookup == null)
             {
                 lookup = new Dictionary<SystemLanguage, string>();
-                foreach (TranslatedTextData text in texts)
+                foreach (TranslatedTextData text in Texts)
                 {
                     if (lookup.ContainsKey(text.Language))
                     {
@@ -76,9 +80,9 @@ namespace UnityTranslator.Data
             {
                 ret = lookup[Translator.SystemLanguage];
             }
-            else if (texts.Length > 0)
+            else if (Texts.Count > 0)
             {
-                ret = texts[0].Text;
+                ret = Texts[0].Text;
             }
             return ret;
         }

@@ -17,7 +17,7 @@ namespace UnityTranslator.Triggers
         /// Translation object
         /// </summary>
         [SerializeField]
-        private TranslationObjectScript translationObject;
+        private TranslationObjectScript translationObject = default;
 
         /// <summary>
         /// Translation

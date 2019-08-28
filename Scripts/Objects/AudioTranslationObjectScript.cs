@@ -17,14 +17,14 @@ namespace UnityTranslator.Objects
         /// Audio translation
         /// </summary>
         [SerializeField]
-        private AudioTranslationData audioTranslation;
+        private AudioTranslationData audioTranslation = default;
 
         /// <summary>
         /// Comment
         /// </summary>
         [TextArea]
         [SerializeField]
-        private string comment;
+        private string comment = default;
 
         /// <summary>
         /// Audio translation

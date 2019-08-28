@@ -43,13 +43,7 @@ namespace UnityTranslator.Data
         /// <summary>
         /// Language
         /// </summary>
-        public SystemLanguage Language
-        {
-            get
-            {
-                return language;
-            }
-        }
+        public SystemLanguage Language => language;
 
         /// <summary>
         /// To string
@@ -57,7 +51,7 @@ namespace UnityTranslator.Data
         /// <returns>String representation</returns>
         public override string ToString()
         {
-            return base.ToString();
+            return Text;
         }
     }
 }

@@ -15,9 +15,8 @@ namespace UnityTranslator.Data
         /// <summary>
         /// Audio clip
         /// </summary>
-        [TextArea]
         [SerializeField]
-        private AudioClip audioClip;
+        private AudioClip audioClip = default;
 
         /// <summary>
         /// Language

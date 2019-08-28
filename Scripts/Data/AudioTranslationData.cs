@@ -27,10 +27,14 @@ namespace UnityTranslator.Data
         /// <summary>
         /// Audios
         /// </summary>
-        public IEnumerable<TranslatedAudioData> Audios
+        public IReadOnlyList<TranslatedAudioData> Audios
         {
             get
             {
+                if (audios == null)
+                {
+                    audios = new TranslatedAudioData[] { new TranslatedAudioData() };
+                }
                 return audios;
             }
         }
@@ -46,7 +50,7 @@ namespace UnityTranslator.Data
                 if (lookup == null)
                 {
                     lookup = new Dictionary<SystemLanguage, AudioClip>();
-                    foreach (TranslatedAudioData audio in audios)
+                    foreach (TranslatedAudioData audio in Audios)
                     {
                         if (lookup.ContainsKey(audio.Language))
                         {
@@ -62,9 +66,9 @@ namespace UnityTranslator.Data
                 {
                     ret = lookup[Translator.SystemLanguage];
                 }
-                else if (audios.Length > 0)
+                else if (Audios.Count > 0)
                 {
-                    ret = audios[0].AudioClip;
+                    ret = Audios[0].AudioClip;
                 }
                 return ret;
             }
