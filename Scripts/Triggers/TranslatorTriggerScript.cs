@@ -1,6 +1,5 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
-using UnityTranslator.Objects;
 
 /// <summary>
 /// Unity translator triggers namespace
@@ -11,36 +10,19 @@ namespace UnityTranslator.Triggers
     /// Translator trigger script class
     /// </summary>
     [RequireComponent(typeof(Text))]
-    public class TranslatorTriggerScript : MonoBehaviour
+    public class TranslatorTriggerScript : ATranslatorTriggerScript
     {
         /// <summary>
-        /// Translation object
+        /// Update text
         /// </summary>
-        [SerializeField]
-        private TranslationObjectScript translationObject = default;
-
-        /// <summary>
-        /// Translation
-        /// </summary>
-        public string Translation
+        /// <param name="text">Text</param>
+        protected override void UpdateText(string text)
         {
-            get
+            Text text_component = GetComponent<Text>();
+            if (text_component != null)
             {
-                return ((translationObject == null) ? string.Empty : translationObject.ToString());
+                text_component.text = Translation;
             }
-        }
-
-        /// <summary>
-        /// Start
-        /// </summary>
-        private void Start()
-        {
-            Text text = GetComponent<Text>();
-            if (text != null)
-            {
-                text.text = Translation;
-            }
-            Destroy(this);
         }
     }
 }
