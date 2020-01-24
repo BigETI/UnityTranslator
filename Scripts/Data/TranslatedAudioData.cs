@@ -10,19 +10,24 @@ namespace UnityTranslator.Data
     /// Translated audio data class
     /// </summary>
     [Serializable]
-    public class TranslatedAudioData
+    public struct TranslatedAudioData
     {
+        /// <summary>
+        /// Default translated audio
+        /// </summary>
+        public static readonly TranslatedAudioData defaultTranslatedAudio = new TranslatedAudioData(null, SystemLanguage.English);
+
         /// <summary>
         /// Audio clip
         /// </summary>
         [SerializeField]
-        private AudioClip audioClip = default;
+        private AudioClip audioClip;
 
         /// <summary>
         /// Language
         /// </summary>
         [SerializeField]
-        private SystemLanguage language = SystemLanguage.English;
+        private SystemLanguage language;
 
         /// <summary>
         /// Text
@@ -44,6 +49,17 @@ namespace UnityTranslator.Data
             {
                 return language;
             }
+        }
+
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="audioClip">Audio clip</param>
+        /// <param name="language">Language</param>
+        public TranslatedAudioData(AudioClip audioClip, SystemLanguage language)
+        {
+            this.audioClip = audioClip;
+            this.language = language;
         }
 
         /// <summary>

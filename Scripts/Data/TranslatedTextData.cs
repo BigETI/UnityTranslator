@@ -10,8 +10,13 @@ namespace UnityTranslator.Data
     /// Translated text data class
     /// </summary>
     [Serializable]
-    public class TranslatedTextData
+    public struct TranslatedTextData
     {
+        /// <summary>
+        /// Default translated text
+        /// </summary>
+        public static readonly TranslatedTextData defaultTranslatedText = new TranslatedTextData(string.Empty, SystemLanguage.English);
+
         /// <summary>
         /// Text
         /// </summary>
@@ -23,7 +28,7 @@ namespace UnityTranslator.Data
         /// Language
         /// </summary>
         [SerializeField]
-        private SystemLanguage language = SystemLanguage.English;
+        private SystemLanguage language;
 
         /// <summary>
         /// Text
@@ -44,6 +49,17 @@ namespace UnityTranslator.Data
         /// Language
         /// </summary>
         public SystemLanguage Language => language;
+
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="text">Text</param>
+        /// <param name="language">Language</param>
+        public TranslatedTextData(string text, SystemLanguage language)
+        {
+            this.text = text;
+            this.language = language;
+        }
 
         /// <summary>
         /// To string

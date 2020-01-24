@@ -17,7 +17,7 @@ namespace UnityTranslator.Data
         /// Audios
         /// </summary>
         [SerializeField]
-        private TranslatedAudioData[] audios = new TranslatedAudioData[] { new TranslatedAudioData() };
+        private TranslatedAudioData[] audios = new TranslatedAudioData[] { TranslatedAudioData.defaultTranslatedAudio };
 
         /// <summary>
         /// Lookup
@@ -33,7 +33,7 @@ namespace UnityTranslator.Data
             {
                 if (audios == null)
                 {
-                    audios = new TranslatedAudioData[] { new TranslatedAudioData() };
+                    audios = new TranslatedAudioData[] { TranslatedAudioData.defaultTranslatedAudio };
                 }
                 return audios;
             }

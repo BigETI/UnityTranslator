@@ -17,7 +17,7 @@ namespace UnityTranslator.Data
         /// Texts
         /// </summary>
         [SerializeField]
-        private TranslatedTextData[] texts = new TranslatedTextData[] { new TranslatedTextData() };
+        private TranslatedTextData[] texts = new TranslatedTextData[] { TranslatedTextData.defaultTranslatedText };
 
         /// <summary>
         /// Lookup
@@ -33,10 +33,22 @@ namespace UnityTranslator.Data
             {
                 if (texts == null)
                 {
-                    texts = new TranslatedTextData[] { new TranslatedTextData() };
+                    texts = new TranslatedTextData[] { TranslatedTextData.defaultTranslatedText };
                 }
                 return texts;
             }
+        }
+
+        /// <summary>
+        /// Add translated text
+        /// </summary>
+        /// <param name="text">Translated text</param>
+        public void AddText(TranslatedTextData text)
+        {
+            List<TranslatedTextData> texts = new List<TranslatedTextData>(Texts);
+            texts.Add(text);
+            this.texts = texts.ToArray();
+            texts.Clear();
         }
 
         /// <summary>
