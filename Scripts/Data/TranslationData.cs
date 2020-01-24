@@ -40,15 +40,64 @@ namespace UnityTranslator.Data
         }
 
         /// <summary>
+        /// Translated text
+        /// </summary>
+        public string Text
+        {
+            get
+            {
+                string ret = string.Empty;
+                if (lookup == null)
+                {
+                    lookup = new Dictionary<SystemLanguage, string>();
+                    foreach (TranslatedTextData text in Texts)
+                    {
+                        if (lookup.ContainsKey(text.Language))
+                        {
+                            lookup[text.Language] = text.Text;
+                        }
+                        else
+                        {
+                            lookup.Add(text.Language, text.Text);
+                        }
+                    }
+                }
+                if (lookup.ContainsKey(Translator.SystemLanguage))
+                {
+                    ret = lookup[Translator.SystemLanguage];
+                }
+                else if (Texts.Count > 0)
+                {
+                    ret = Texts[0].Text;
+                }
+                return ret;
+            }
+        }
+
+        /// <summary>
         /// Add translated text
         /// </summary>
         /// <param name="text">Translated text</param>
         public void AddText(TranslatedTextData text)
         {
-            List<TranslatedTextData> texts = new List<TranslatedTextData>(Texts);
-            texts.Add(text);
-            this.texts = texts.ToArray();
-            texts.Clear();
+            bool append = true;
+            for (int i = 0; i < Texts.Count; i++)
+            {
+                TranslatedTextData translated_text = Texts[i];
+                if (translated_text.Language == text.Language)
+                {
+                    texts[i] = text;
+                    append = false;
+                    break;
+                }
+            }
+            if (append)
+            {
+                TranslatedTextData[] texts = new TranslatedTextData[Texts.Count + 1];
+                Array.Copy(this.texts, 0, texts, 0, this.texts.Length);
+                texts[this.texts.Length] = text;
+                this.texts = texts;
+            }
         }
 
         /// <summary>
@@ -70,33 +119,6 @@ namespace UnityTranslator.Data
         /// To string
         /// </summary>
         /// <returns>String representation</returns>
-        public override string ToString()
-        {
-            string ret = string.Empty;
-            if (lookup == null)
-            {
-                lookup = new Dictionary<SystemLanguage, string>();
-                foreach (TranslatedTextData text in Texts)
-                {
-                    if (lookup.ContainsKey(text.Language))
-                    {
-                        lookup[text.Language] = text.Text;
-                    }
-                    else
-                    {
-                        lookup.Add(text.Language, text.Text);
-                    }
-                }
-            }
-            if (lookup.ContainsKey(Translator.SystemLanguage))
-            {
-                ret = lookup[Translator.SystemLanguage];
-            }
-            else if (Texts.Count > 0)
-            {
-                ret = Texts[0].Text;
-            }
-            return ret;
-        }
+        public override string ToString() => Text;
     }
 }

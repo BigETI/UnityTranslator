@@ -32,24 +32,12 @@ namespace UnityTranslator.Data
         /// <summary>
         /// Text
         /// </summary>
-        public AudioClip AudioClip
-        {
-            get
-            {
-                return audioClip;
-            }
-        }
+        public AudioClip AudioClip => audioClip;
 
         /// <summary>
         /// Language
         /// </summary>
-        public SystemLanguage Language
-        {
-            get
-            {
-                return language;
-            }
-        }
+        public SystemLanguage Language => language;
 
         /// <summary>
         /// Constructor

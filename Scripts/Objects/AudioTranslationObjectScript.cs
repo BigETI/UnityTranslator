@@ -33,20 +33,18 @@ namespace UnityTranslator.Objects
         {
             get
             {
+                if (audioTranslation == null)
+                {
+                    audioTranslation = new AudioTranslationData();
+                }
                 return audioTranslation;
             }
         }
 
         /// <summary>
-        /// Audio clip
+        /// Translated audio clip
         /// </summary>
-        public AudioClip AudioClip
-        {
-            get
-            {
-                return ((audioTranslation == null) ? null : audioTranslation.AudioClip);
-            }
-        }
+        public AudioClip AudioClip => AudioTranslation.AudioClip;
 
         /// <summary>
         /// Comment
@@ -77,5 +75,11 @@ namespace UnityTranslator.Objects
             }
             return ret;
         }
+
+        /// <summary>
+        /// To string
+        /// </summary>
+        /// <returns>String representation</returns>
+        public override string ToString() => AudioTranslation.ToString();
     }
 }

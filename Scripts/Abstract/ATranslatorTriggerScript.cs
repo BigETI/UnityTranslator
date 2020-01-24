@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 using UnityTranslator.Objects;
 
 /// <summary>
@@ -9,6 +10,7 @@ namespace UnityTranslator
     /// <summary>
     /// Translator trigger script abstract class
     /// </summary>
+    [Serializable]
     public abstract class ATranslatorTriggerScript : MonoBehaviour
     {
         /// <summary>
@@ -20,13 +22,7 @@ namespace UnityTranslator
         /// <summary>
         /// Translation
         /// </summary>
-        public string Translation
-        {
-            get
-            {
-                return ((translationObject == null) ? string.Empty : translationObject.ToString());
-            }
-        }
+        public string Translation => ((translationObject == null) ? string.Empty : translationObject.ToString());
 
         /// <summary>
         /// Update text

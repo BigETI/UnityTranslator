@@ -40,7 +40,7 @@ namespace UnityTranslator.Data
         }
 
         /// <summary>
-        /// Audios
+        /// Translated audio clip
         /// </summary>
         public AudioClip AudioClip
         {
@@ -71,6 +71,32 @@ namespace UnityTranslator.Data
                     ret = Audios[0].AudioClip;
                 }
                 return ret;
+            }
+        }
+
+        /// <summary>
+        /// Add translated audio
+        /// </summary>
+        /// <param name="audio">Translated audio</param>
+        public void AddAudioClip(TranslatedAudioData audio)
+        {
+            bool append = true;
+            for (int i = 0; i < Audios.Count; i++)
+            {
+                TranslatedAudioData translated_audio = Audios[i];
+                if (translated_audio.Language == audio.Language)
+                {
+                    audios[i] = audio;
+                    append = false;
+                    break;
+                }
+            }
+            if (append)
+            {
+                TranslatedAudioData[] audios = new TranslatedAudioData[Audios.Count + 1];
+                Array.Copy(this.audios, 0, audios, 0, this.audios.Length);
+                audios[this.audios.Length] = audio;
+                this.audios = audios;
             }
         }
 

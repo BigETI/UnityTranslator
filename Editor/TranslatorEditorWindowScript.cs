@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Text;
 using UnityEditor;
 using UnityEngine;
@@ -27,9 +26,19 @@ namespace UnityTranslator.Editor
         private IReadOnlyList<TranslationObjectScript> missingTranslations;
 
         /// <summary>
-        /// Edit dictionary
+        /// Missing audio translations
         /// </summary>
-        private Dictionary<int, string> editDictionary = new Dictionary<int, string>();
+        private IReadOnlyList<AudioTranslationObjectScript> missingAudioTranslations;
+
+        /// <summary>
+        /// Edit translation dictionary
+        /// </summary>
+        private Dictionary<int, string> editTranslationDictionary = new Dictionary<int, string>();
+
+        /// <summary>
+        /// Edit audio translation dictionary
+        /// </summary>
+        private Dictionary<int, AudioClip> editAudioTranslationDictionary = new Dictionary<int, AudioClip>();
 
         /// <summary>
         /// Is not translated
@@ -43,8 +52,33 @@ namespace UnityTranslator.Editor
             {
                 if (text.Language == toSystemLanguage)
                 {
-                    ret = false;
-                    break;
+                    if (text.Text.Trim().Length > 0)
+                    {
+                        ret = false;
+                        break;
+                    }
+                }
+            }
+            return ret;
+        }
+
+        /// <summary>
+        /// Is not translated
+        /// </summary>
+        /// <param name="audioTranslation">Audio translation</param>
+        /// <returns>Result</returns>
+        private bool IsNotTranslated(AudioTranslationObjectScript audioTranslation)
+        {
+            bool ret = true;
+            foreach (TranslatedAudioData audio in audioTranslation.AudioTranslation.Audios)
+            {
+                if (audio.Language == toSystemLanguage)
+                {
+                    if (audio.AudioClip != null)
+                    {
+                        ret = false;
+                        break;
+                    }
                 }
             }
             return ret;
@@ -60,7 +94,7 @@ namespace UnityTranslator.Editor
         }
 
         /// <summary>
-        /// Mmissing translations
+        /// Missing translations
         /// </summary>
         private IReadOnlyList<TranslationObjectScript> MissingTranslations
         {
@@ -92,6 +126,44 @@ namespace UnityTranslator.Editor
         }
 
         /// <summary>
+        /// Missing audio translations
+        /// </summary>
+        private IReadOnlyList<AudioTranslationObjectScript> MissingAudioTranslations
+        {
+            get
+            {
+                List<AudioTranslationObjectScript> missing_audio_translations = new List<AudioTranslationObjectScript>();
+                string[] audio_translation_guids = AssetDatabase.FindAssets("t:" + nameof(AudioTranslationObjectScript));
+                if (audio_translation_guids != null)
+                {
+                    foreach (string audio_translation_guid in audio_translation_guids)
+                    {
+                        if (audio_translation_guid != null)
+                        {
+                            AudioTranslationObjectScript audio_translation = AssetDatabase.LoadAssetAtPath<AudioTranslationObjectScript>(AssetDatabase.GUIDToAssetPath(audio_translation_guid));
+                            if (audio_translation != null)
+                            {
+                                if (IsNotTranslated(audio_translation))
+                                {
+                                    missing_audio_translations.Add(audio_translation);
+                                }
+                            }
+                        }
+                    }
+                }
+                AudioTranslationObjectScript[] ret = missing_audio_translations.ToArray();
+                missing_audio_translations.Clear();
+                return ret;
+            }
+        }
+
+        private void UpdateMissingTranslations()
+        {
+            missingTranslations = MissingTranslations;
+            missingAudioTranslations = MissingAudioTranslations;
+        }
+
+        /// <summary>
         /// On GUI
         /// </summary>
         private void OnGUI()
@@ -100,7 +172,7 @@ namespace UnityTranslator.Editor
             if (toSystemLanguage != to_system_language)
             {
                 toSystemLanguage = to_system_language;
-                missingTranslations = MissingTranslations;
+                UpdateMissingTranslations();
             }
             GUILayout.Space(21.0f);
             if (GUILayout.Button("Copy translation form to clipboard"))
@@ -109,7 +181,7 @@ namespace UnityTranslator.Editor
                 sb.Append(toSystemLanguage.ToString());
                 sb.AppendLine(".");
                 sb.AppendLine("\r\n\r\n## Words\r\n");
-                missingTranslations = MissingTranslations;
+                UpdateMissingTranslations();
                 foreach (TranslationObjectScript missing_translation in missingTranslations)
                 {
                     if (IsNotTranslated(missing_translation))
@@ -145,47 +217,79 @@ namespace UnityTranslator.Editor
             }
             if (GUILayout.Button("Update view"))
             {
-                missingTranslations = MissingTranslations;
+                UpdateMissingTranslations();
             }
             if (GUILayout.Button("Apply changes"))
             {
-                missingTranslations = MissingTranslations;
+                UpdateMissingTranslations();
                 foreach (TranslationObjectScript missing_translation in missingTranslations)
                 {
                     int key = missing_translation.GetInstanceID();
-                    if (editDictionary.ContainsKey(key))
+                    if (editTranslationDictionary.ContainsKey(key))
                     {
-                        missing_translation.Translation.AddText(new TranslatedTextData(editDictionary[key], toSystemLanguage));
+                        missing_translation.Translation.AddText(new TranslatedTextData(editTranslationDictionary[key], toSystemLanguage));
                     }
                 }
-                editDictionary.Clear();
-                missingTranslations = MissingTranslations;
+                foreach (AudioTranslationObjectScript missing_audio_translation in missingAudioTranslations)
+                {
+                    int key = missing_audio_translation.GetInstanceID();
+                    if (editTranslationDictionary.ContainsKey(key))
+                    {
+                        missing_audio_translation.AudioTranslation.AddAudioClip(new TranslatedAudioData(editAudioTranslationDictionary[key], toSystemLanguage));
+                    }
+                }
+                editTranslationDictionary.Clear();
+                editAudioTranslationDictionary.Clear();
+                UpdateMissingTranslations();
             }
-            GUILayout.Space(21.0f);
             if (missingTranslations == null)
             {
-                missingTranslations = MissingTranslations;
+                UpdateMissingTranslations();
             }
             foreach (TranslationObjectScript missing_translation in missingTranslations)
             {
+                GUILayout.Space(21.0f);
                 EditorGUILayout.ObjectField(missing_translation, typeof(TranslationObjectScript), true);
                 int key = missing_translation.GetInstanceID();
-                string value = (editDictionary.ContainsKey(key) ? editDictionary[key] : string.Empty);
+                string value = (editTranslationDictionary.ContainsKey(key) ? editTranslationDictionary[key] : string.Empty);
                 string input = EditorGUILayout.TextArea(value);
                 if (input.Length > 0)
                 {
-                    if (editDictionary.ContainsKey(key))
+                    if (editTranslationDictionary.ContainsKey(key))
                     {
-                        editDictionary[key] = input;
+                        editTranslationDictionary[key] = input;
                     }
                     else
                     {
-                        editDictionary.Add(key, input);
+                        editTranslationDictionary.Add(key, input);
                     }
                 }
                 else
                 {
-                    editDictionary.Remove(key);
+                    editTranslationDictionary.Remove(key);
+                }
+            }
+            foreach (AudioTranslationObjectScript missing_audio_translation in missingAudioTranslations)
+            {
+                GUILayout.Space(21.0f);
+                EditorGUILayout.ObjectField(missing_audio_translation, typeof(AudioTranslationObjectScript), true);
+                int key = missing_audio_translation.GetInstanceID();
+                AudioClip value = (editAudioTranslationDictionary.ContainsKey(key) ? editAudioTranslationDictionary[key] : null);
+                AudioClip input = (AudioClip)(EditorGUILayout.ObjectField(value, typeof(AudioClip), true));
+                if (input != null)
+                {
+                    if (editAudioTranslationDictionary.ContainsKey(key))
+                    {
+                        editAudioTranslationDictionary[key] = input;
+                    }
+                    else
+                    {
+                        editAudioTranslationDictionary.Add(key, input);
+                    }
+                }
+                else
+                {
+                    editAudioTranslationDictionary.Remove(key);
                 }
             }
         }

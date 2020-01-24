@@ -42,6 +42,11 @@ namespace UnityTranslator.Objects
         }
 
         /// <summary>
+        /// Translated text
+        /// </summary>
+        public string Text => Translation.Text;
+
+        /// <summary>
         /// Comment
         /// </summary>
         public string Comment
@@ -75,9 +80,6 @@ namespace UnityTranslator.Objects
         /// To string
         /// </summary>
         /// <returns>String representation</returns>
-        public override string ToString()
-        {
-            return Translation.ToString();
-        }
+        public override string ToString() => Text;
     }
 }
