@@ -8,34 +8,34 @@ using UnityTranslator.Objects;
 namespace UnityTranslator
 {
     /// <summary>
-    /// Translator trigger script abstract class
+    /// Text translator trigger script abstract class
     /// </summary>
     [Serializable]
-    public abstract class ATranslatorTriggerScript : MonoBehaviour
+    public abstract class ATextTranslatorTriggerScript : MonoBehaviour, ITextTranslatorTrigger
     {
         /// <summary>
-        /// Translation object
+        /// String translation object
         /// </summary>
         [SerializeField]
-        private TranslationObjectScript translationObject = default;
+        private StringTranslationObjectScript stringTranslationObject = default;
 
         /// <summary>
-        /// Translation
+        /// String translation
         /// </summary>
-        public string Translation => ((translationObject == null) ? string.Empty : translationObject.ToString());
+        public string StringTranslation => ((stringTranslationObject == null) ? string.Empty : stringTranslationObject.ToString());
 
         /// <summary>
-        /// Update text
+        /// Update string
         /// </summary>
         /// <param name="text">Text</param>
-        protected abstract void UpdateText(string text);
+        protected abstract void UpdateString(string stringValue);
 
         /// <summary>
         /// Start
         /// </summary>
         private void Start()
         {
-            UpdateText(Translation);
+            UpdateString(StringTranslation);
             Destroy(this);
         }
     }

@@ -8,16 +8,16 @@ using UnityEngine;
 namespace UnityTranslator.Data
 {
     /// <summary>
-    /// Audio translation data class
+    /// Audio clip translation data class
     /// </summary>
     [Serializable]
-    public class AudioTranslationData : IComparable<AudioTranslationData>
+    public class AudioClipTranslationData : IAudioClipTranslationData
     {
         /// <summary>
-        /// Audios
+        /// Translated audio clips
         /// </summary>
         [SerializeField]
-        private TranslatedAudioData[] audios = new TranslatedAudioData[] { TranslatedAudioData.defaultTranslatedAudio };
+        private TranslatedAudioClipData[] audioClips = new TranslatedAudioClipData[] { TranslatedAudioClipData.defaultTranslatedAudioClip };
 
         /// <summary>
         /// Lookup
@@ -25,17 +25,17 @@ namespace UnityTranslator.Data
         private Dictionary<SystemLanguage, AudioClip> lookup;
 
         /// <summary>
-        /// Audios
+        /// Translated audio clips
         /// </summary>
-        public IReadOnlyList<TranslatedAudioData> Audios
+        public IReadOnlyList<TranslatedAudioClipData> AudioClips
         {
             get
             {
-                if (audios == null)
+                if (audioClips == null)
                 {
-                    audios = new TranslatedAudioData[] { TranslatedAudioData.defaultTranslatedAudio };
+                    audioClips = new TranslatedAudioClipData[] { TranslatedAudioClipData.defaultTranslatedAudioClip };
                 }
-                return audios;
+                return audioClips;
             }
         }
 
@@ -50,15 +50,15 @@ namespace UnityTranslator.Data
                 if (lookup == null)
                 {
                     lookup = new Dictionary<SystemLanguage, AudioClip>();
-                    foreach (TranslatedAudioData audio in Audios)
+                    foreach (TranslatedAudioClipData audio_clip in AudioClips)
                     {
-                        if (lookup.ContainsKey(audio.Language))
+                        if (lookup.ContainsKey(audio_clip.Language))
                         {
-                            lookup[audio.Language] = audio.AudioClip;
+                            lookup[audio_clip.Language] = audio_clip.AudioClip;
                         }
                         else
                         {
-                            lookup.Add(audio.Language, audio.AudioClip);
+                            lookup.Add(audio_clip.Language, audio_clip.AudioClip);
                         }
                     }
                 }
@@ -66,37 +66,37 @@ namespace UnityTranslator.Data
                 {
                     ret = lookup[Translator.SystemLanguage];
                 }
-                else if (Audios.Count > 0)
+                else if (AudioClips.Count > 0)
                 {
-                    ret = Audios[0].AudioClip;
+                    ret = AudioClips[0].AudioClip;
                 }
                 return ret;
             }
         }
 
         /// <summary>
-        /// Add translated audio
+        /// Add translated audio clip
         /// </summary>
-        /// <param name="audio">Translated audio</param>
-        public void AddAudioClip(TranslatedAudioData audio)
+        /// <param name="audioClip">Translated audio clip</param>
+        public void AddAudioClip(TranslatedAudioClipData audioClip)
         {
             bool append = true;
-            for (int i = 0; i < Audios.Count; i++)
+            for (int i = 0; i < AudioClips.Count; i++)
             {
-                TranslatedAudioData translated_audio = Audios[i];
-                if (translated_audio.Language == audio.Language)
+                ref TranslatedAudioClipData translated_audio_clip = ref audioClips[i];
+                if (translated_audio_clip.Language == audioClip.Language)
                 {
-                    audios[i] = audio;
+                    translated_audio_clip = audioClip;
                     append = false;
                     break;
                 }
             }
             if (append)
             {
-                TranslatedAudioData[] audios = new TranslatedAudioData[Audios.Count + 1];
-                Array.Copy(this.audios, 0, audios, 0, this.audios.Length);
-                audios[this.audios.Length] = audio;
-                this.audios = audios;
+                TranslatedAudioClipData[] audio_clips = new TranslatedAudioClipData[AudioClips.Count + 1];
+                Array.Copy(audioClips, 0, audio_clips, 0, audioClips.Length);
+                audio_clips[audioClips.Length] = audioClip;
+                audioClips = audio_clips;
             }
         }
 
@@ -105,7 +105,7 @@ namespace UnityTranslator.Data
         /// </summary>
         /// <param name="other">Other</param>
         /// <returns>Result</returns>
-        public int CompareTo(AudioTranslationData other)
+        public int CompareTo(IAudioClipTranslationData other)
         {
             int ret = 1;
             if (other != null)

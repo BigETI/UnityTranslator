@@ -56,9 +56,9 @@ namespace UnityTranslator
         /// </summary>
         /// <param name="resourcePath">Resource path</param>
         /// <returns>Translation if successful, otherwise "null"</returns>
-        public static TranslationObjectScript LoadFromResource(string resourcePath)
+        public static StringTranslationObjectScript LoadFromResource(string resourcePath)
         {
-            return Resources.Load<TranslationObjectScript>("Translations/" + resourcePath);
+            return Resources.Load<StringTranslationObjectScript>("Translations/" + resourcePath);
         }
 
         /// <summary>
@@ -78,7 +78,7 @@ namespace UnityTranslator
                 string trimmed_string = translatableString.Trim();
                 if ((trimmed_string.Length > 4) && trimmed_string.StartsWith("{$") && trimmed_string.EndsWith("$}"))
                 {
-                    TranslationObjectScript translation = LoadFromResource(trimmed_string.Substring(2, trimmed_string.Length - 4));
+                    StringTranslationObjectScript translation = LoadFromResource(trimmed_string.Substring(2, trimmed_string.Length - 4));
                     if (translation != null)
                     {
                         ret = translation.ToString();

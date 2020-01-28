@@ -8,16 +8,16 @@ using UnityEngine;
 namespace UnityTranslator.Data
 {
     /// <summary>
-    /// Translation data class
+    /// String translation data class
     /// </summary>
     [Serializable]
-    public class TranslationData : IComparable<TranslationData>
+    public class StringTranslationData : IStringTranslationData
     {
         /// <summary>
-        /// Texts
+        /// Translated strings
         /// </summary>
         [SerializeField]
-        private TranslatedTextData[] texts = new TranslatedTextData[] { TranslatedTextData.defaultTranslatedText };
+        private TranslatedStringData[] strings = new TranslatedStringData[] { TranslatedStringData.defaultTranslatedString };
 
         /// <summary>
         /// Lookup
@@ -25,24 +25,24 @@ namespace UnityTranslator.Data
         private Dictionary<SystemLanguage, string> lookup;
 
         /// <summary>
-        /// Texts
+        /// Translated strings
         /// </summary>
-        public IReadOnlyList<TranslatedTextData> Texts
+        public IReadOnlyList<TranslatedStringData> Strings
         {
             get
             {
-                if (texts == null)
+                if (strings == null)
                 {
-                    texts = new TranslatedTextData[] { TranslatedTextData.defaultTranslatedText };
+                    strings = new TranslatedStringData[] { TranslatedStringData.defaultTranslatedString };
                 }
-                return texts;
+                return strings;
             }
         }
 
         /// <summary>
-        /// Translated text
+        /// Translated string
         /// </summary>
-        public string Text
+        public string String
         {
             get
             {
@@ -50,15 +50,15 @@ namespace UnityTranslator.Data
                 if (lookup == null)
                 {
                     lookup = new Dictionary<SystemLanguage, string>();
-                    foreach (TranslatedTextData text in Texts)
+                    foreach (TranslatedStringData str in Strings)
                     {
-                        if (lookup.ContainsKey(text.Language))
+                        if (lookup.ContainsKey(str.Language))
                         {
-                            lookup[text.Language] = text.Text;
+                            lookup[str.Language] = str.String;
                         }
                         else
                         {
-                            lookup.Add(text.Language, text.Text);
+                            lookup.Add(str.Language, str.String);
                         }
                     }
                 }
@@ -66,37 +66,37 @@ namespace UnityTranslator.Data
                 {
                     ret = lookup[Translator.SystemLanguage];
                 }
-                else if (Texts.Count > 0)
+                else if (Strings.Count > 0)
                 {
-                    ret = Texts[0].Text;
+                    ret = Strings[0].String;
                 }
                 return ret;
             }
         }
 
         /// <summary>
-        /// Add translated text
+        /// Add translated string
         /// </summary>
-        /// <param name="text">Translated text</param>
-        public void AddText(TranslatedTextData text)
+        /// <param name="stringValue">Translated string</param>
+        public void AddString(TranslatedStringData stringValue)
         {
             bool append = true;
-            for (int i = 0; i < Texts.Count; i++)
+            for (int i = 0; i < Strings.Count; i++)
             {
-                TranslatedTextData translated_text = Texts[i];
-                if (translated_text.Language == text.Language)
+                ref TranslatedStringData translated_string = ref strings[i];
+                if (translated_string.Language == stringValue.Language)
                 {
-                    texts[i] = text;
+                    translated_string = stringValue;
                     append = false;
                     break;
                 }
             }
             if (append)
             {
-                TranslatedTextData[] texts = new TranslatedTextData[Texts.Count + 1];
-                Array.Copy(this.texts, 0, texts, 0, this.texts.Length);
-                texts[this.texts.Length] = text;
-                this.texts = texts;
+                TranslatedStringData[] strings = new TranslatedStringData[Strings.Count + 1];
+                Array.Copy(this.strings, 0, strings, 0, this.strings.Length);
+                strings[this.strings.Length] = stringValue;
+                this.strings = strings;
             }
         }
 
@@ -105,7 +105,7 @@ namespace UnityTranslator.Data
         /// </summary>
         /// <param name="other">Other</param>
         /// <returns>Result</returns>
-        public int CompareTo(TranslationData other)
+        public int CompareTo(IStringTranslationData other)
         {
             int ret = 1;
             if (other != null)
@@ -119,6 +119,6 @@ namespace UnityTranslator.Data
         /// To string
         /// </summary>
         /// <returns>String representation</returns>
-        public override string ToString() => Text;
+        public override string ToString() => String;
     }
 }

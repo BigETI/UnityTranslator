@@ -7,22 +7,21 @@ using UnityEngine;
 namespace UnityTranslator.Data
 {
     /// <summary>
-    /// Translated text data class
+    /// Translated texture data structure
     /// </summary>
     [Serializable]
-    public struct TranslatedTextData
+    public struct TranslatedTextureData
     {
         /// <summary>
-        /// Default translated text
+        /// Default translated texture
         /// </summary>
-        public static readonly TranslatedTextData defaultTranslatedText = new TranslatedTextData(string.Empty, SystemLanguage.English);
+        public static readonly TranslatedTextureData defaultTranslatedTexture = new TranslatedTextureData(null, SystemLanguage.English);
 
         /// <summary>
-        /// Text
+        /// Translated texture
         /// </summary>
-        [TextArea]
         [SerializeField]
-        private string text;
+        private Texture texture;
 
         /// <summary>
         /// Language
@@ -31,19 +30,9 @@ namespace UnityTranslator.Data
         private SystemLanguage language;
 
         /// <summary>
-        /// Text
+        /// Translated texture
         /// </summary>
-        public string Text
-        {
-            get
-            {
-                if (text == null)
-                {
-                    text = string.Empty;
-                }
-                return text;
-            }
-        }
+        public Texture Texture => texture;
 
         /// <summary>
         /// Language
@@ -53,11 +42,11 @@ namespace UnityTranslator.Data
         /// <summary>
         /// Constructor
         /// </summary>
-        /// <param name="text">Text</param>
+        /// <param name="texture">Translated texture</param>
         /// <param name="language">Language</param>
-        public TranslatedTextData(string text, SystemLanguage language)
+        public TranslatedTextureData(Texture texture, SystemLanguage language)
         {
-            this.text = text;
+            this.texture = texture;
             this.language = language;
         }
 
@@ -65,9 +54,6 @@ namespace UnityTranslator.Data
         /// To string
         /// </summary>
         /// <returns>String representation</returns>
-        public override string ToString()
-        {
-            return Text;
-        }
+        public override string ToString() => ((texture == null) ? string.Empty : texture.name);
     }
 }

@@ -7,21 +7,21 @@ using UnityEngine.UI;
 namespace UnityTranslator.Triggers
 {
     /// <summary>
-    /// Translator trigger script class
+    /// Text translator trigger script class
     /// </summary>
     [RequireComponent(typeof(Text))]
-    public class TranslatorTriggerScript : ATranslatorTriggerScript
+    public class TextTranslatorTriggerScript : ATextTranslatorTriggerScript
     {
         /// <summary>
         /// Update text
         /// </summary>
         /// <param name="text">Text</param>
-        protected override void UpdateText(string text)
+        protected override void UpdateString(string text)
         {
             Text text_component = GetComponent<Text>();
             if (text_component != null)
             {
-                text_component.text = Translation;
+                text_component.text = StringTranslation;
             }
         }
     }

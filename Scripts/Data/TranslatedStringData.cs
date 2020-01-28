@@ -7,21 +7,22 @@ using UnityEngine;
 namespace UnityTranslator.Data
 {
     /// <summary>
-    /// Translated audio data class
+    /// Translated string data class
     /// </summary>
     [Serializable]
-    public struct TranslatedAudioData
+    public struct TranslatedStringData
     {
         /// <summary>
-        /// Default translated audio
+        /// Default translated string
         /// </summary>
-        public static readonly TranslatedAudioData defaultTranslatedAudio = new TranslatedAudioData(null, SystemLanguage.English);
+        public static readonly TranslatedStringData defaultTranslatedString = new TranslatedStringData(string.Empty, SystemLanguage.English);
 
         /// <summary>
-        /// Audio clip
+        /// Translated string
         /// </summary>
+        [TextArea]
         [SerializeField]
-        private AudioClip audioClip;
+        private string stringValue;
 
         /// <summary>
         /// Language
@@ -30,9 +31,19 @@ namespace UnityTranslator.Data
         private SystemLanguage language;
 
         /// <summary>
-        /// Text
+        /// Translated string
         /// </summary>
-        public AudioClip AudioClip => audioClip;
+        public string String
+        {
+            get
+            {
+                if (stringValue == null)
+                {
+                    stringValue = string.Empty;
+                }
+                return stringValue;
+            }
+        }
 
         /// <summary>
         /// Language
@@ -42,11 +53,11 @@ namespace UnityTranslator.Data
         /// <summary>
         /// Constructor
         /// </summary>
-        /// <param name="audioClip">Audio clip</param>
+        /// <param name="stringValue">Translated string</param>
         /// <param name="language">Language</param>
-        public TranslatedAudioData(AudioClip audioClip, SystemLanguage language)
+        public TranslatedStringData(string stringValue, SystemLanguage language)
         {
-            this.audioClip = audioClip;
+            this.stringValue = stringValue;
             this.language = language;
         }
 
@@ -54,9 +65,6 @@ namespace UnityTranslator.Data
         /// To string
         /// </summary>
         /// <returns>String representation</returns>
-        public override string ToString()
-        {
-            return ((audioClip == null) ? string.Empty : audioClip.name);
-        }
+        public override string ToString() => String;
     }
 }
