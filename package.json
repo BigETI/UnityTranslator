@@ -1,0 +1,15 @@
+{
+    "name": "com.bigeti.translator",
+    "version": "1.0.0",
+    "displayName": "Unity Translator",
+    "description": "This package contains a translation library for Unity.",
+    "dependencies": {},
+    "keywords": [
+        "translator"
+    ],
+    "author": {
+        "name": "Ethem Kurt",
+        "email": "bigeti.ethem@gmail.com",
+        "url": "https://bigeti.de/"
+    }
+}
