@@ -8,26 +8,63 @@ using UnityEngine;
 /// </summary>
 namespace UnityTranslatorEditor
 {
+    /// <summary>
+    /// A class that describes a XLIFF
+    /// </summary>
     public class XLIFF : IXLIFF
     {
+        /// <summary>
+        /// Empty translations
+        /// </summary>
         private static readonly IReadOnlyDictionary<string, string> emptyTranslations = new Dictionary<string, string>();
 
+        /// <summary>
+        /// Languages
+        /// </summary>
         private readonly Dictionary<SystemLanguage, Dictionary<string, string>> languages;
 
+        /// <summary>
+        /// Comments
+        /// </summary>
         private readonly Dictionary<string, string> comments;
 
+        /// <summary>
+        /// Keys
+        /// </summary>
         private readonly HashSet<string> keys = new HashSet<string>();
 
+        /// <summary>
+        /// XLIFF specification
+        /// </summary>
         public EXLIFFSpecification Specification { get; }
 
+        /// <summary>
+        /// Source language
+        /// </summary>
         public SystemLanguage SourceLanguage { get; }
 
+        /// <summary>
+        /// Supported languages
+        /// </summary>
         public IReadOnlyCollection<SystemLanguage> SupportedLanguages => languages.Keys;
 
+        /// <summary>
+        /// Comments
+        /// </summary>
         public IReadOnlyDictionary<string, string> Comments => comments;
 
+        /// <summary>
+        /// XLIFF documents
+        /// </summary>
         public IReadOnlyList<IXLIFFDocument> XLIFFDocuments => GetXLIFFDocuments(Specification);
 
+        /// <summary>
+        /// Constructs a new XLIFF
+        /// </summary>
+        /// <param name="specification">XLIFF specification</param>
+        /// <param name="sourceLanguage">Source language</param>
+        /// <param name="languages">Languages</param>
+        /// <param name="comments">Comments</param>
         public XLIFF(EXLIFFSpecification specification, SystemLanguage sourceLanguage, IDictionary<SystemLanguage, Dictionary<string, string>> languages, IDictionary<string, string> comments)
         {
             Specification = specification;
@@ -40,6 +77,12 @@ namespace UnityTranslatorEditor
             }
         }
 
+        /// <summary>
+        /// Tries to get translations for the specified language
+        /// </summary>
+        /// <param name="language">Language</param>
+        /// <param name="result">Result</param>
+        /// <returns>"true" if translations for specified language are available, otherwise "false"</returns>
         public bool TryGetTranslations(SystemLanguage language, out IReadOnlyDictionary<string, string> result)
         {
             bool ret = languages.TryGetValue(language, out Dictionary<string, string> translations);
@@ -47,12 +90,22 @@ namespace UnityTranslatorEditor
             return ret;
         }
 
+        /// <summary>
+        /// Gets translations
+        /// </summary>
+        /// <param name="language">Language</param>
+        /// <returns>Translations</returns>
         public IReadOnlyDictionary<string, string> GetTranslations(SystemLanguage language)
         {
             TryGetTranslations(language, out IReadOnlyDictionary<string, string> ret);
             return ret;
         }
 
+        /// <summary>
+        /// Gets XLIFF documents
+        /// </summary>
+        /// <param name="specification">XLIFF specification</param>
+        /// <returns>XLIFF documents</returns>
         public IReadOnlyList<IXLIFFDocument> GetXLIFFDocuments(EXLIFFSpecification specification)
         {
             List<IXLIFFDocument> ret = new List<IXLIFFDocument>();
@@ -73,8 +126,8 @@ namespace UnityTranslatorEditor
                         xliff_version_xml_attribute.Value = "2.0";
                         XmlNode file_xml_node = xliff_xml_document.CreateNode(XmlNodeType.Element, "file", null);
                         XmlAttribute file_id_xml_attribute = xliff_xml_document.CreateAttribute("id");
-                        string language_code = ISO639.LanguageToLanguageCode(language.Key);
-                        string source_language_code = ISO639.LanguageToLanguageCode(SourceLanguage);
+                        string language_code = ISO639.GetLanguageCodeFromLanguage(language.Key);
+                        string source_language_code = ISO639.GetLanguageCodeFromLanguage(SourceLanguage);
                         source_language_xml_attribute.Value = source_language_code;
                         target_language_xml_attribute.Value = language_code;
                         file_id_xml_attribute.Value = $"{ source_language_code.ToUpper() }To{ language_code.ToUpper() }";
@@ -149,8 +202,8 @@ namespace UnityTranslatorEditor
                         XmlAttribute target_language_xml_attribute = null;
                         XmlAttribute datatype_xml_attribute = xliff_xml_document.CreateAttribute("datatype");
                         XmlAttribute original_xml_attribute = xliff_xml_document.CreateAttribute("original");
-                        string language_code = ISO639.LanguageToLanguageCode(language.Key).ToUpper();
-                        string source_language_code = ISO639.LanguageToLanguageCode(SourceLanguage).ToUpper();
+                        string language_code = ISO639.GetLanguageCodeFromLanguage(language.Key).ToUpper();
+                        string source_language_code = ISO639.GetLanguageCodeFromLanguage(SourceLanguage).ToUpper();
                         if (specification == EXLIFFSpecification.Version1)
                         {
                             source_language_xml_attribute.Value = language_code;

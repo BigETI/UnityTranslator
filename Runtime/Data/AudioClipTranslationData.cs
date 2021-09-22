@@ -53,7 +53,7 @@ namespace UnityTranslator.Data
                 return is_found ? ret : FallbackValue;
 #else
                 UpdateSystemLanguageToAudioClipLookup();
-                return systemLanguageToAudioClipLookup.ContainsKey(Translator.CurrentLanguage) ? systemLanguageToAudioClipLookup[Translator.CurrentLanguage] : FallbackValue;
+                return systemLanguageToAudioClipLookup.TryGetValue(Translator.CurrentLanguage, out AudioClip ret) ? ret : FallbackValue;
 #endif
             }
         }
@@ -142,7 +142,7 @@ namespace UnityTranslator.Data
         }
 
         /// <summary>
-        /// Clears this translation
+        /// Clears this translation data
         /// </summary>
         public void Clear()
         {

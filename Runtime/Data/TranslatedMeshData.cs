@@ -7,21 +7,21 @@ using UnityEngine;
 namespace UnityTranslator.Data
 {
     /// <summary>
-    /// A class that describes translated sprite data
+    /// A class that describes translated mesh data
     /// </summary>
     [Serializable]
-    public struct TranslatedSpriteData : ITranslatedSpriteData
+    public struct TranslatedMeshData : ITranslatedMeshData
     {
         /// <summary>
-        /// Default translated sprite
+        /// Default translated mesh
         /// </summary>
-        public static readonly TranslatedSpriteData defaultTranslatedSprite = new TranslatedSpriteData(null, SystemLanguage.English);
+        public static readonly TranslatedMeshData defaultTranslatedMesh = new TranslatedMeshData(null, SystemLanguage.English);
 
         /// <summary>
-        /// Translated sprite
+        /// Translated mesh
         /// </summary>
         [SerializeField]
-        private Sprite sprite;
+        private Mesh mesh;
 
         /// <summary>
         /// Language
@@ -32,7 +32,7 @@ namespace UnityTranslator.Data
         /// <summary>
         /// Translated value
         /// </summary>
-        public Sprite Value => sprite;
+        public Mesh Value => mesh;
 
         /// <summary>
         /// Language
@@ -40,13 +40,13 @@ namespace UnityTranslator.Data
         public SystemLanguage Language => language;
 
         /// <summary>
-        /// Constructs new translated sprite data
+        /// Constructs new translated mesh data
         /// </summary>
-        /// <param name="sprite">Translated sprite</param>
+        /// <param name="mesh">Translated mesh</param>
         /// <param name="language">Language</param>
-        public TranslatedSpriteData(Sprite sprite, SystemLanguage language)
+        public TranslatedMeshData(Mesh mesh, SystemLanguage language)
         {
-            this.sprite = sprite;
+            this.mesh = mesh;
             this.language = language;
         }
 
@@ -54,6 +54,6 @@ namespace UnityTranslator.Data
         /// To string
         /// </summary>
         /// <returns>String representation</returns>
-        public override string ToString() => sprite ? sprite.name : string.Empty;
+        public override string ToString() => mesh ? mesh.name : string.Empty;
     }
 }

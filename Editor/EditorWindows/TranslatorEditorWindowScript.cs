@@ -35,24 +35,34 @@ namespace UnityTranslatorEditor.EditorWindows
         };
 
         /// <summary>
-        /// Edit string translation dictionary
-        /// </summary>
-        private readonly Dictionary<int, (string Value, string Comment)> editStringTranslationDictionary = new Dictionary<int, (string Value, string Comment)>();
-
-        /// <summary>
         /// Edit audio clip translation dictionary
         /// </summary>
         private readonly Dictionary<int, (AudioClip Value, string Comment)> editAudioClipTranslationDictionary = new Dictionary<int, (AudioClip Value, string Comment)>();
 
         /// <summary>
-        /// Edit texture translation dictionary
+        /// Edit material translation dictionary
         /// </summary>
-        private readonly Dictionary<int, (Texture Value, string Comment)> editTextureTranslationDictionary = new Dictionary<int, (Texture Value, string Comment)>();
+        private readonly Dictionary<int, (Material Value, string Comment)> editMaterialTranslationDictionary = new Dictionary<int, (Material Value, string Comment)>();
+
+        /// <summary>
+        /// Edit mesh translation dictionary
+        /// </summary>
+        private readonly Dictionary<int, (Mesh Value, string Comment)> editMeshTranslationDictionary = new Dictionary<int, (Mesh Value, string Comment)>();
 
         /// <summary>
         /// Edit sprite translation dictionary
         /// </summary>
         private readonly Dictionary<int, (Sprite Value, string Comment)> editSpriteTranslationDictionary = new Dictionary<int, (Sprite Value, string Comment)>();
+
+        /// <summary>
+        /// Edit string translation dictionary
+        /// </summary>
+        private readonly Dictionary<int, (string Value, string Comment)> editStringTranslationDictionary = new Dictionary<int, (string Value, string Comment)>();
+
+        /// <summary>
+        /// Edit texture translation dictionary
+        /// </summary>
+        private readonly Dictionary<int, (Texture Value, string Comment)> editTextureTranslationDictionary = new Dictionary<int, (Texture Value, string Comment)>();
 
         /// <summary>
         /// Translation object language preview
@@ -85,24 +95,34 @@ namespace UnityTranslatorEditor.EditorWindows
         private Vector2 scrollPosition = Vector2.zero;
 
         /// <summary>
-        /// String translations
-        /// </summary>
-        private IReadOnlyList<(StringTranslationObjectScript Translation, bool IsMissing)> stringTranslations;
-
-        /// <summary>
         /// Audio clip translations
         /// </summary>
         private IReadOnlyList<(AudioClipTranslationObjectScript Translation, bool IsMissing)> audioClipTranslations;
 
         /// <summary>
-        /// Texture translations
+        /// Material translations
         /// </summary>
-        private IReadOnlyList<(TextureTranslationObjectScript Translation, bool IsMissing)> textureTranslations;
+        private IReadOnlyList<(MaterialTranslationObjectScript Translation, bool IsMissing)> materialTranslations;
+
+        /// <summary>
+        /// Mesh translations
+        /// </summary>
+        private IReadOnlyList<(MeshTranslationObjectScript Translation, bool IsMissing)> meshTranslations;
 
         /// <summary>
         /// Sprite translations
         /// </summary>
         private IReadOnlyList<(SpriteTranslationObjectScript Translation, bool IsMissing)> spriteTranslations;
+
+        /// <summary>
+        /// String translations
+        /// </summary>
+        private IReadOnlyList<(StringTranslationObjectScript Translation, bool IsMissing)> stringTranslations;
+
+        /// <summary>
+        /// Texture translations
+        /// </summary>
+        private IReadOnlyList<(TextureTranslationObjectScript Translation, bool IsMissing)> textureTranslations;
 
         /// <summary>
         /// Tabs
@@ -153,7 +173,16 @@ namespace UnityTranslatorEditor.EditorWindows
             return ret;
         }
 
-        private void DrawObjectTranslationTable<T, TValue, TTranslationData, TTranslatedData>(IReadOnlyList<(T Translation, bool IsMissing)> translations, Dictionary<int, (TValue Value, string Comment)> editTranslationDictionary) where T : UnityEngine.Object, IBaseTranslationObject, IReadOnlyTranslationData<TValue, TTranslatedData>, ITranslationDataWrapper<TValue, TTranslationData, TTranslatedData>, IComparable<T> where TValue : UnityEngine.Object where TTranslationData : ITranslationData<TValue, TTranslatedData> where TTranslatedData : ITranslatedData<TValue>
+        /// <summary>
+        /// Draws an object translation table
+        /// </summary>
+        /// <typeparam name="TTranslationObject">Translation object type</typeparam>
+        /// <typeparam name="TValue">Value type</typeparam>
+        /// <typeparam name="TTranslationData">Translation data type</typeparam>
+        /// <typeparam name="TTranslatedData">Translated data type</typeparam>
+        /// <param name="translations">Translations</param>
+        /// <param name="editTranslationDictionary">Edit translation dictionary</param>
+        private void DrawObjectTranslationTable<TTranslationObject, TValue, TTranslationData, TTranslatedData>(IReadOnlyList<(TTranslationObject Translation, bool IsMissing)> translations, Dictionary<int, (TValue Value, string Comment)> editTranslationDictionary) where TTranslationObject : UnityEngine.Object, IBaseTranslationObject, IReadOnlyTranslationData<TValue, TTranslatedData>, ITranslationDataWrapper<TValue, TTranslationData, TTranslatedData>, IComparable<TTranslationObject> where TValue : UnityEngine.Object where TTranslationData : ITranslationData<TValue, TTranslatedData> where TTranslatedData : ITranslatedData<TValue>
         {
             float table_width = Screen.width - tableMargin;
             Color default_background_color = GUI.backgroundColor;
@@ -173,7 +202,7 @@ namespace UnityTranslatorEditor.EditorWindows
             GUILayout.EndHorizontal();
             bool is_even_entry = true;
             bool is_updating_translations = false;
-            foreach ((T Translation, bool IsMissing) in translations)
+            foreach ((TTranslationObject Translation, bool IsMissing) in translations)
             {
                 int key = Translation.GetInstanceID();
                 is_even_entry = !is_even_entry;
@@ -216,7 +245,7 @@ namespace UnityTranslatorEditor.EditorWindows
                 TValue value = is_edited ? translation.Value : original_value;
                 GUI.backgroundColor = is_edited ? Color.yellow : (IsMissing ? Color.red : (is_even_entry ? light_background_color : default_background_color));
                 GUILayout.BeginVertical();
-                EditorGUILayout.ObjectField(Translation, typeof(T), true, asset_gui_layout_options);
+                EditorGUILayout.ObjectField(Translation, typeof(TTranslationObject), true, asset_gui_layout_options);
                 TValue input = (TValue)EditorGUILayout.ObjectField(value, typeof(TValue), true, translation_gui_layout_options);
                 GUI.backgroundColor = default_background_color;
                 GUILayout.Box(GUIContent.none, preview_translation_divider_gui_layout_options);
@@ -266,10 +295,29 @@ namespace UnityTranslatorEditor.EditorWindows
             }
         }
 
+        /// <summary>
+        /// Gets invoked when audio clips need to be drawn
+        /// </summary>
         private void AudioClipsTabDrawnEvent() => DrawObjectTranslationTable<AudioClipTranslationObjectScript, AudioClip, AudioClipTranslationData, TranslatedAudioClipData>(audioClipTranslations, editAudioClipTranslationDictionary);
 
+        /// <summary>
+        /// Gets invoked when materials need to be drawn
+        /// </summary>
+        private void MaterialsTabDrawnEvent() => DrawObjectTranslationTable<MaterialTranslationObjectScript, Material, MaterialTranslationData, TranslatedMaterialData>(materialTranslations, editMaterialTranslationDictionary);
+
+        /// <summary>
+        /// Gets invoked when meshes need to be drawn
+        /// </summary>
+        private void MeshesTabDrawnEvent() => DrawObjectTranslationTable<MeshTranslationObjectScript, Mesh, MeshTranslationData, TranslatedMeshData>(meshTranslations, editMeshTranslationDictionary);
+
+        /// <summary>
+        /// Gets invoked when sprites need to be drawn
+        /// </summary>
         private void SpritesTabDrawnEvent() => DrawObjectTranslationTable<SpriteTranslationObjectScript, Sprite, SpriteTranslationData, TranslatedSpriteData>(spriteTranslations, editSpriteTranslationDictionary);
 
+        /// <summary>
+        /// Gets invoked when strings need to be drawn
+        /// </summary>
         private void StringsTabDrawnEvent()
         {
             float table_width = Screen.width - tableMargin;
@@ -387,6 +435,9 @@ namespace UnityTranslatorEditor.EditorWindows
             }
         }
 
+        /// <summary>
+        /// Gets invoked when textures need to be drawn
+        /// </summary>
         private void TexturesTabDrawnEvent() => DrawObjectTranslationTable<TextureTranslationObjectScript, Texture, TextureTranslationData, TranslatedTextureData>(textureTranslations, editTextureTranslationDictionary);
 
         /// <summary>
@@ -394,20 +445,24 @@ namespace UnityTranslatorEditor.EditorWindows
         /// </summary>
         public void UpdateTranslations()
         {
-            stringTranslations = GetTranslations<StringTranslationObjectScript>(isShowingMissingTranslationsOnly);
             audioClipTranslations = GetTranslations<AudioClipTranslationObjectScript>(isShowingMissingTranslationsOnly);
-            textureTranslations = GetTranslations<TextureTranslationObjectScript>(isShowingMissingTranslationsOnly);
+            materialTranslations = GetTranslations<MaterialTranslationObjectScript>(isShowingMissingTranslationsOnly);
+            meshTranslations = GetTranslations<MeshTranslationObjectScript>(isShowingMissingTranslationsOnly);
             spriteTranslations = GetTranslations<SpriteTranslationObjectScript>(isShowingMissingTranslationsOnly);
+            stringTranslations = GetTranslations<StringTranslationObjectScript>(isShowingMissingTranslationsOnly);
+            textureTranslations = GetTranslations<TextureTranslationObjectScript>(isShowingMissingTranslationsOnly);
         }
 
         /// <summary>
-        /// On GUI
+        /// Gets invoked when GUI needs to be drawn
         /// </summary>
         private void OnGUI()
         {
             tabs ??= new (string Name, TabDrawnDelegate OnTabDrawn)[]
             {
                 ("Audio clips", AudioClipsTabDrawnEvent),
+                ("Materials", MaterialsTabDrawnEvent),
+                ("Meshes", MeshesTabDrawnEvent),
                 ("Sprites", SpritesTabDrawnEvent),
                 ("Strings", StringsTabDrawnEvent),
                 ("Textures", TexturesTabDrawnEvent)
@@ -436,7 +491,7 @@ namespace UnityTranslatorEditor.EditorWindows
                     IXLIFF xliff = XLIFFImporter.ImportFromFile(file_path);
                     if (xliff != null)
                     {
-                        PreviewTranslationsEditorWindowScript preview_translation_editor_window = GetWindow<PreviewTranslationsEditorWindowScript>($"Importing XLIFF \"{ file_path }\"...", true, typeof(TranslatorEditorWindowScript));
+                        XLIFFImporterEditorWindowScript preview_translation_editor_window = GetWindow<XLIFFImporterEditorWindowScript>($"Importing XLIFF \"{ file_path }\"...", true, typeof(TranslatorEditorWindowScript));
                         if (preview_translation_editor_window)
                         {
                             preview_translation_editor_window.XLIFF = xliff;
@@ -492,11 +547,11 @@ namespace UnityTranslatorEditor.EditorWindows
                                 StringBuilder extended_file_path = new StringBuilder();
                                 extended_file_path.Append(Path.GetFileNameWithoutExtension(file_path));
                                 extended_file_path.Append('_');
-                                extended_file_path.Append(ISO639.LanguageToLanguageCode(xliff_document.SourceLanguage).ToUpper());
+                                extended_file_path.Append(ISO639.GetLanguageCodeFromLanguage(xliff_document.SourceLanguage).ToUpper());
                                 extended_file_path.Append("To");
                                 foreach (SystemLanguage target_language in xliff_document.TargetLanguages)
                                 {
-                                    extended_file_path.Append(ISO639.LanguageToLanguageCode(target_language).ToUpper());
+                                    extended_file_path.Append(ISO639.GetLanguageCodeFromLanguage(target_language).ToUpper());
                                 }
                                 extended_file_path.Append(Path.GetExtension(file_path));
                                 XLIFFExporter.ExportXLIFFDocumetToFile(xliff_document, extended_file_path.ToString());

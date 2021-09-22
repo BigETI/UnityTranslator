@@ -9,16 +9,16 @@ using UnityTranslator.Data;
 namespace UnityTranslator.Objects
 {
     /// <summary>
-    /// A class that describes sprite translation object script
+    /// A class that describes mesh translation object script
     /// </summary>
-    [CreateAssetMenu(fileName = "SpriteTranslation", menuName = "Translator/Sprite translation")]
-    public class SpriteTranslationObjectScript : ScriptableObject, ISpriteTranslationObject<SpriteTranslationObjectScript>
+    [CreateAssetMenu(fileName = "MeshTranslation", menuName = "Translator/Mesh translation")]
+    public class MeshTranslationObjectScript : ScriptableObject, IMeshTranslationObject<MeshTranslationObjectScript>
     {
         /// <summary>
-        /// Sprite translation
+        /// Mesh translation
         /// </summary>
         [SerializeField]
-        private SpriteTranslationData spriteTranslation = default;
+        private MeshTranslationData meshTranslation = default;
 
         /// <summary>
         /// Comment
@@ -35,22 +35,22 @@ namespace UnityTranslator.Objects
 #else
         private
 #endif
-            SpriteTranslationData Translation => spriteTranslation ??= new SpriteTranslationData();
+            MeshTranslationData Translation => meshTranslation ??= new MeshTranslationData();
 
         /// <summary>
         /// Values
         /// </summary>
-        public IReadOnlyList<TranslatedSpriteData> Values => Translation.Values;
+        public IReadOnlyList<TranslatedMeshData> Values => Translation.Values;
 
         /// <summary>
         /// Translated value
         /// </summary>
-        public Sprite Value => Translation.Value;
+        public Mesh Value => Translation.Value;
 
         /// <summary>
         /// Fallback value
         /// </summary>
-        public Sprite FallbackValue => Translation.FallbackValue;
+        public Mesh FallbackValue => Translation.FallbackValue;
 
         /// <summary>
         /// Comment
@@ -78,21 +78,21 @@ namespace UnityTranslator.Objects
         /// <param name="language">Language</param>
         /// <param name="result">Result</param>
         /// <returns>"true" if translated value is available, otherwise "false"</returns>
-        public bool TryGetValue(SystemLanguage language, out Sprite result) => Translation.TryGetValue(language, out result);
+        public bool TryGetValue(SystemLanguage language, out Mesh result) => Translation.TryGetValue(language, out result);
 
         /// <summary>
         /// Gets translated value from the specified language
         /// </summary>
         /// <param name="language">Language</param>
         /// <returns>Translated value</returns>
-        public Sprite GetValue(SystemLanguage language) => Translation.GetValue(language);
+        public Mesh GetValue(SystemLanguage language) => Translation.GetValue(language);
 
         /// <summary>
-        /// Compares this sprite translation to another sprite translation
+        /// Compares this material translation to another material translation
         /// </summary>
-        /// <param name="other">Other sprite translation</param>
+        /// <param name="other">Other material translation</param>
         /// <returns>Comparison result</returns>
-        public int CompareTo(SpriteTranslationObjectScript other) => (other == null) ? 1 : name.CompareTo(other.name);
+        public int CompareTo(MeshTranslationObjectScript other) => (other == null) ? 1 : name.CompareTo(other.name);
 
         /// <summary>
         /// To string

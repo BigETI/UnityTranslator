@@ -8,5 +8,6 @@ namespace UnityTranslator
     /// </summary>
     public interface IAudioSourceTranslatorTrigger : IBaseAudioSourceTranslatorTrigger
     {
+        // ...
     }
 }

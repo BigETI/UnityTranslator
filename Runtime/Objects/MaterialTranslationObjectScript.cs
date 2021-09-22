@@ -9,16 +9,16 @@ using UnityTranslator.Data;
 namespace UnityTranslator.Objects
 {
     /// <summary>
-    /// A class that describes sprite translation object script
+    /// A class that describes material translation object script
     /// </summary>
-    [CreateAssetMenu(fileName = "SpriteTranslation", menuName = "Translator/Sprite translation")]
-    public class SpriteTranslationObjectScript : ScriptableObject, ISpriteTranslationObject<SpriteTranslationObjectScript>
+    [CreateAssetMenu(fileName = "MaterialTranslation", menuName = "Translator/Material translation")]
+    public class MaterialTranslationObjectScript : ScriptableObject, IMaterialTranslationObject<MaterialTranslationObjectScript>
     {
         /// <summary>
-        /// Sprite translation
+        /// Material translation
         /// </summary>
         [SerializeField]
-        private SpriteTranslationData spriteTranslation = default;
+        private MaterialTranslationData materialTranslation = default;
 
         /// <summary>
         /// Comment
@@ -35,22 +35,22 @@ namespace UnityTranslator.Objects
 #else
         private
 #endif
-            SpriteTranslationData Translation => spriteTranslation ??= new SpriteTranslationData();
+            MaterialTranslationData Translation => materialTranslation ??= new MaterialTranslationData();
 
         /// <summary>
         /// Values
         /// </summary>
-        public IReadOnlyList<TranslatedSpriteData> Values => Translation.Values;
+        public IReadOnlyList<TranslatedMaterialData> Values => Translation.Values;
 
         /// <summary>
         /// Translated value
         /// </summary>
-        public Sprite Value => Translation.Value;
+        public Material Value => Translation.Value;
 
         /// <summary>
         /// Fallback value
         /// </summary>
-        public Sprite FallbackValue => Translation.FallbackValue;
+        public Material FallbackValue => Translation.FallbackValue;
 
         /// <summary>
         /// Comment
@@ -78,21 +78,21 @@ namespace UnityTranslator.Objects
         /// <param name="language">Language</param>
         /// <param name="result">Result</param>
         /// <returns>"true" if translated value is available, otherwise "false"</returns>
-        public bool TryGetValue(SystemLanguage language, out Sprite result) => Translation.TryGetValue(language, out result);
+        public bool TryGetValue(SystemLanguage language, out Material result) => Translation.TryGetValue(language, out result);
 
         /// <summary>
         /// Gets translated value from the specified language
         /// </summary>
         /// <param name="language">Language</param>
         /// <returns>Translated value</returns>
-        public Sprite GetValue(SystemLanguage language) => Translation.GetValue(language);
+        public Material GetValue(SystemLanguage language) => Translation.GetValue(language);
 
         /// <summary>
-        /// Compares this sprite translation to another sprite translation
+        /// Compares this material translation to another material translation
         /// </summary>
-        /// <param name="other">Other sprite translation</param>
+        /// <param name="other">Other material translation</param>
         /// <returns>Comparison result</returns>
-        public int CompareTo(SpriteTranslationObjectScript other) => (other == null) ? 1 : name.CompareTo(other.name);
+        public int CompareTo(MaterialTranslationObjectScript other) => (other == null) ? 1 : name.CompareTo(other.name);
 
         /// <summary>
         /// To string

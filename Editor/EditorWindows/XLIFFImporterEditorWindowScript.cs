@@ -9,14 +9,29 @@ using UnityTranslator.Objects;
 /// </summary>
 namespace UnityTranslatorEditor.EditorWindows
 {
-    public class PreviewTranslationsEditorWindowScript : EditorWindow
+    /// <summary>
+    /// A class that describes a XLIFF importer editor window script
+    /// </summary>
+    public class XLIFFImporterEditorWindowScript : EditorWindow
     {
+        /// <summary>
+        /// String translations
+        /// </summary>
         private readonly Dictionary<string, StringTranslationObjectScript> stringTranslations = new Dictionary<string, StringTranslationObjectScript>();
 
+        /// <summary>
+        /// Language import order
+        /// </summary>
         private readonly List<SystemLanguage> languageImportOrder = new List<SystemLanguage>();
 
+        /// <summary>
+        /// Modified languages
+        /// </summary>
         private readonly Dictionary<SystemLanguage, Dictionary<string, (bool IsSelected, string ModifiedTranslation, string ModifiedComment, SystemLanguage PreviewLanguage)>> modifiedLanguages = new Dictionary<SystemLanguage, Dictionary<string, (bool IsSelected, string ModifiedTranslation, string ModifiedComment, SystemLanguage PreviewLanguage)>>();
 
+        /// <summary>
+        /// XLIFF
+        /// </summary>
         private IXLIFF xliff;
 
         /// <summary>
@@ -24,6 +39,9 @@ namespace UnityTranslatorEditor.EditorWindows
         /// </summary>
         private Vector2 scrollPosition = Vector2.zero;
 
+        /// <summary>
+        /// XLIFF
+        /// </summary>
         public IXLIFF XLIFF
         {
             get => xliff;
@@ -43,6 +61,12 @@ namespace UnityTranslatorEditor.EditorWindows
             }
         }
 
+        /// <summary>
+        /// Tries to get string translation
+        /// </summary>
+        /// <param name="assetPath">Asset path</param>
+        /// <param name="stringTranslation">String translation</param>
+        /// <returns>"true" if string translation is available, otherwise "false"</returns>
         private bool TryGetStringTranslation(string assetPath, out StringTranslationObjectScript stringTranslation)
         {
             if (!stringTranslations.TryGetValue(assetPath, out stringTranslation))
@@ -56,6 +80,9 @@ namespace UnityTranslatorEditor.EditorWindows
             return stringTranslation;
         }
 
+        /// <summary>
+        /// Gets invoked when GUI needs to be drawn
+        /// </summary>
         private void OnGUI()
         {
             float input_width = Screen.width * 0.5f;

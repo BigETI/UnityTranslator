@@ -53,7 +53,7 @@ namespace UnityTranslator.Data
                 return is_found ? ret : FallbackValue;
 #else
                 UpdateSystemLanguageToSpriteLookup();
-                return systemLanguageToSpriteLookup.ContainsKey(Translator.CurrentLanguage) ? systemLanguageToSpriteLookup[Translator.CurrentLanguage] : FallbackValue;
+                return systemLanguageToSpriteLookup.TryGetValue(Translator.CurrentLanguage, out Sprite ret) ? ret : FallbackValue;
 #endif
             }
         }
@@ -142,7 +142,7 @@ namespace UnityTranslator.Data
         }
 
         /// <summary>
-        /// Clears this translation
+        /// Clears this translation data
         /// </summary>
         public void Clear()
         {

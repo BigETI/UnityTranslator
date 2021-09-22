@@ -8,16 +8,37 @@ using UnityEngine;
 /// </summary>
 namespace UnityTranslatorEditor
 {
+    /// <summary>
+    /// A class that describes a XLIFF document
+    /// </summary>
     public class XLIFFDocument : IXLIFFDocument
     {
+        /// <summary>
+        /// Target languages
+        /// </summary>
         private readonly List<SystemLanguage> targetLanguages = new List<SystemLanguage>();
 
+        /// <summary>
+        /// Source language
+        /// </summary>
         public SystemLanguage SourceLanguage { get; }
 
+        /// <summary>
+        /// Target languages
+        /// </summary>
         public IReadOnlyList<SystemLanguage> TargetLanguages => targetLanguages;
 
+        /// <summary>
+        /// Document
+        /// </summary>
         public XmlDocument Document { get; }
 
+        /// <summary>
+        /// Constructs a new XLIFF document
+        /// </summary>
+        /// <param name="sourceLanguage"></param>
+        /// <param name="targetLanguages"></param>
+        /// <param name="document"></param>
         public XLIFFDocument(SystemLanguage sourceLanguage, IEnumerable<SystemLanguage> targetLanguages, XmlDocument document)
         {
             if (targetLanguages == null)

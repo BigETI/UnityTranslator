@@ -52,22 +52,8 @@ namespace UnityTranslator.Data
                 }
                 return is_found ? ret : FallbackValue;
 #else
-                if (systemLanguageToTextureLookup == null)
-                {
-                    systemLanguageToTextureLookup = new Dictionary<SystemLanguage, Texture>();
-                    foreach (TranslatedTextureData translated_texture in Values)
-                    {
-                        if (systemLanguageToTextureLookup.ContainsKey(translated_texture.Language))
-                        {
-                            systemLanguageToTextureLookup[translated_texture.Language] = translated_texture.Value;
-                        }
-                        else
-                        {
-                            systemLanguageToTextureLookup.Add(translated_texture.Language, translated_texture.Value);
-                        }
-                    }
-                }
-                return systemLanguageToTextureLookup.ContainsKey(Translator.CurrentLanguage) ? systemLanguageToTextureLookup[Translator.CurrentLanguage] : FallbackValue;
+                UpdateSystemLanguageToTextureLookup();
+                return systemLanguageToTextureLookup.TryGetValue(Translator.CurrentLanguage, out Texture ret) ? ret : FallbackValue;
 #endif
             }
         }
@@ -156,7 +142,7 @@ namespace UnityTranslator.Data
         }
 
         /// <summary>
-        /// Clears this translation
+        /// Clears this translation data
         /// </summary>
         public void Clear()
         {

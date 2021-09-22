@@ -9,10 +9,21 @@ using UnityEngine;
 /// </summary>
 namespace UnityTranslatorEditor
 {
+    /// <summary>
+    /// A class that describes a XLIFF importer
+    /// </summary>
     public static class XLIFFImporter
     {
+        /// <summary>
+        /// Default exception message
+        /// </summary>
         private static readonly string defaultExceptionMessage = "XML document does not conform XLIFF specification: ";
 
+        /// <summary>
+        /// Imports XLIFF from stream
+        /// </summary>
+        /// <param name="stream">Stream</param>
+        /// <returns>XLIFF</returns>
         public static IXLIFF ImportXLIFFFromStream(Stream stream)
         {
             if (stream == null)
@@ -148,6 +159,11 @@ namespace UnityTranslatorEditor
             return ret;
         }
 
+        /// <summary>
+        /// Imports a XLIFF from the specified file path
+        /// </summary>
+        /// <param name="filePath">File path</param>
+        /// <returns>XLIFF</returns>
         public static IXLIFF ImportFromFile(string filePath)
         {
             if (filePath == null)

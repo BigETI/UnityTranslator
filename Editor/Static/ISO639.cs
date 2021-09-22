@@ -7,10 +7,19 @@ using UnityEngine;
 /// </summary>
 namespace UnityTranslatorEditor
 {
+    /// <summary>
+    /// A class that describes ISO639-1
+    /// </summary>
     public static class ISO639
     {
+        /// <summary>
+        /// Default language code
+        /// </summary>
         private static readonly string defaultLanguageCode = "en";
 
+        /// <summary>
+        /// Language code to language lookup
+        /// </summary>
         private static readonly IReadOnlyDictionary<string, SystemLanguage> languageCodeToLanguageLookup = new Dictionary<string, SystemLanguage>
         {
             // Afar
@@ -566,6 +575,9 @@ namespace UnityTranslatorEditor
             { "zu", SystemLanguage.Unknown }
         };
 
+        /// <summary>
+        /// Language to language code lookup
+        /// </summary>
         private static readonly IReadOnlyDictionary<SystemLanguage, string> languageToLanguageCodeLookup = new Dictionary<SystemLanguage, string>
         {
             { SystemLanguage.Afrikaans, "af" },
@@ -613,6 +625,11 @@ namespace UnityTranslatorEditor
             { SystemLanguage.Unknown, defaultLanguageCode }
         };
 
+        /// <summary>
+        /// Gets the language code key
+        /// </summary>
+        /// <param name="languageCode">Language code</param>
+        /// <returns>Language code key</returns>
         private static string GetLanguageCodeKey(string languageCode)
         {
             if (languageCode == null)
@@ -622,12 +639,33 @@ namespace UnityTranslatorEditor
             return languageCode.Trim().ToLower();
         }
 
+        /// <summary>
+        /// Is language code valid
+        /// </summary>
+        /// <param name="languageCode">Language code</param>
+        /// <returns>"true" if language code is valid, otherwise "false"</returns>
         public static bool IsLanguageCodeValid(string languageCode) => languageCodeToLanguageLookup.TryGetValue(GetLanguageCodeKey(languageCode), out SystemLanguage language) && (language != SystemLanguage.Unknown);
 
+        /// <summary>
+        /// Tries to get language from language code
+        /// </summary>
+        /// <param name="languageCode">Language code</param>
+        /// <param name="result">Result</param>
+        /// <returns>"true" if language is available, otherwise "false"</returns>
         public static bool TryGetLanguageFromLanguageCode(string languageCode, out SystemLanguage result) => languageCodeToLanguageLookup.TryGetValue(GetLanguageCodeKey(languageCode), out result) && (result != SystemLanguage.Unknown);
 
-        public static SystemLanguage LanguageCodeToLanguage(string languageCode) => languageCodeToLanguageLookup.TryGetValue(GetLanguageCodeKey(languageCode), out SystemLanguage ret) ? ret : SystemLanguage.Unknown;
+        /// <summary>
+        /// Gets language from language code
+        /// </summary>
+        /// <param name="languageCode">Language code</param>
+        /// <returns>Language</returns>
+        public static SystemLanguage GetLanguageFromLanguageCode(string languageCode) => languageCodeToLanguageLookup.TryGetValue(GetLanguageCodeKey(languageCode), out SystemLanguage ret) ? ret : SystemLanguage.Unknown;
 
-        public static string LanguageToLanguageCode(SystemLanguage language) => languageToLanguageCodeLookup.TryGetValue(language, out string ret) ? ret : defaultLanguageCode;
+        /// <summary>
+        /// Gets language code from language
+        /// </summary>
+        /// <param name="language">Language</param>
+        /// <returns>Language code</returns>
+        public static string GetLanguageCodeFromLanguage(SystemLanguage language) => languageToLanguageCodeLookup.TryGetValue(language, out string ret) ? ret : defaultLanguageCode;
     }
 }

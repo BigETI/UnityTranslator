@@ -9,8 +9,16 @@ using UnityEngine;
 /// </summary>
 namespace UnityTranslatorEditor
 {
+    /// <summary>
+    /// A class that describes a XLIFF exporter
+    /// </summary>
     public static class XLIFFExporter
     {
+        /// <summary>
+        /// Exports a XLIFF document to stream
+        /// </summary>
+        /// <param name="xliffDocument">XLIFF document</param>
+        /// <param name="stream">Stream</param>
         public static void ExportXLIFFDocumentToStream(IXLIFFDocument xliffDocument, Stream stream)
         {
             if (xliffDocument == null)
@@ -36,6 +44,12 @@ namespace UnityTranslatorEditor
             xml_writer.Flush();
         }
 
+        /// <summary>
+        /// Exports a XLIFF document to file
+        /// </summary>
+        /// <param name="xliffDocument">XLIFF document</param>
+        /// <param name="filePath">File path</param>
+        /// <returns>"true" if successful, otherwise "false"</returns>
         public static bool ExportXLIFFDocumetToFile(IXLIFFDocument xliffDocument, string filePath)
         {
             if (xliffDocument == null)
@@ -64,6 +78,11 @@ namespace UnityTranslatorEditor
             return ret;
         }
 
+        /// <summary>
+        /// Exports a XLIFF document to a string
+        /// </summary>
+        /// <param name="xliffDocument">XLIFF document</param>
+        /// <returns></returns>
         public static string ExportXLIFFDocumentToString(IXLIFFDocument xliffDocument)
         {
             using MemoryStream memory_stream = new MemoryStream();

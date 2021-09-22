@@ -8,6 +8,9 @@ using UnityTranslator.Data;
 /// </summary>
 namespace UnityTranslator.Objects
 {
+    /// <summary>
+    /// A class that describes string translation object script
+    /// </summary>
     [CreateAssetMenu(fileName = "StringTranslation", menuName = "Translator/String translation")]
     public class StringTranslationObjectScript : ScriptableObject, IStringTranslationObject<StringTranslationObjectScript>
     {

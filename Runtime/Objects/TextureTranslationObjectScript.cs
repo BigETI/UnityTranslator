@@ -8,6 +8,9 @@ using UnityTranslator.Data;
 /// </summary>
 namespace UnityTranslator.Objects
 {
+    /// <summary>
+    /// A class that describes texture translation object script
+    /// </summary>
     [CreateAssetMenu(fileName = "TextureTranslation", menuName = "Translator/Texture translation")]
     public class TextureTranslationObjectScript : ScriptableObject, ITextureTranslationObject<TextureTranslationObjectScript>
     {

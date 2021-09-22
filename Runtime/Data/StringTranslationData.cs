@@ -51,7 +51,7 @@ namespace UnityTranslator.Data
                 return ret ?? FallbackValue;
 #else
                 UpdateSystemLanguageToStringLookup();
-                return systemLanguageToStringLookup.ContainsKey(Translator.CurrentLanguage) ? systemLanguageToStringLookup[Translator.CurrentLanguage] : FallbackValue;
+                return systemLanguageToStringLookup.TryGetValue(Translator.CurrentLanguage, out string ret) ? ret : FallbackValue;
 #endif
             }
         }
@@ -149,7 +149,7 @@ namespace UnityTranslator.Data
         }
 
         /// <summary>
-        /// Clears this translation
+        /// Clears this translation data
         /// </summary>
         public void Clear()
         {

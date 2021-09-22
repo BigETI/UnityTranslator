@@ -7,21 +7,21 @@ using UnityEngine;
 namespace UnityTranslator.Data
 {
     /// <summary>
-    /// A class that describes translated sprite data
+    /// A class that describes translated material data
     /// </summary>
     [Serializable]
-    public struct TranslatedSpriteData : ITranslatedSpriteData
+    public struct TranslatedMaterialData : ITranslatedMaterialData
     {
         /// <summary>
-        /// Default translated sprite
+        /// Default translated material
         /// </summary>
-        public static readonly TranslatedSpriteData defaultTranslatedSprite = new TranslatedSpriteData(null, SystemLanguage.English);
+        public static readonly TranslatedMaterialData defaultTranslatedMaterial = new TranslatedMaterialData(null, SystemLanguage.English);
 
         /// <summary>
-        /// Translated sprite
+        /// Translated material
         /// </summary>
         [SerializeField]
-        private Sprite sprite;
+        private Material material;
 
         /// <summary>
         /// Language
@@ -32,7 +32,7 @@ namespace UnityTranslator.Data
         /// <summary>
         /// Translated value
         /// </summary>
-        public Sprite Value => sprite;
+        public Material Value => material;
 
         /// <summary>
         /// Language
@@ -40,13 +40,13 @@ namespace UnityTranslator.Data
         public SystemLanguage Language => language;
 
         /// <summary>
-        /// Constructs new translated sprite data
+        /// Constructs new translated material data
         /// </summary>
-        /// <param name="sprite">Translated sprite</param>
+        /// <param name="material">Translated material</param>
         /// <param name="language">Language</param>
-        public TranslatedSpriteData(Sprite sprite, SystemLanguage language)
+        public TranslatedMaterialData(Material material, SystemLanguage language)
         {
-            this.sprite = sprite;
+            this.material = material;
             this.language = language;
         }
 
@@ -54,6 +54,6 @@ namespace UnityTranslator.Data
         /// To string
         /// </summary>
         /// <returns>String representation</returns>
-        public override string ToString() => sprite ? sprite.name : string.Empty;
+        public override string ToString() => material ? material.name : string.Empty;
     }
 }

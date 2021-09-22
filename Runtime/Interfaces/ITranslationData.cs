@@ -12,10 +12,22 @@ namespace UnityTranslator
     /// <typeparam name="TTranslatedData"></typeparam>
     public interface ITranslationData<TValue, TTranslatedData> : IReadOnlyTranslationData<TValue, TTranslatedData> where TTranslatedData : ITranslatedData<TValue>
     {
+        /// <summary>
+        /// Inserts translated value
+        /// </summary>
+        /// <param name="value">Translated value</param>
+        /// <param name="language">Language</param>
         void Insert(TValue value, SystemLanguage language);
 
+        /// <summary>
+        /// Removes translated value with the specified language
+        /// </summary>
+        /// <param name="language">Language</param>
         void Remove(SystemLanguage language);
 
+        /// <summary>
+        /// Clears this translation data
+        /// </summary>
         void Clear();
     }
 }
