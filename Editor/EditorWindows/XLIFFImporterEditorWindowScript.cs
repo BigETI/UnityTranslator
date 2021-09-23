@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
+using UnityEditor.IMGUI.Controls;
 using UnityEngine;
 using UnityTranslator.Objects;
 
@@ -30,9 +31,24 @@ namespace UnityTranslatorEditor.EditorWindows
         private readonly Dictionary<SystemLanguage, Dictionary<string, (bool IsSelected, string ModifiedTranslation, string ModifiedComment, SystemLanguage PreviewLanguage)>> modifiedLanguages = new Dictionary<SystemLanguage, Dictionary<string, (bool IsSelected, string ModifiedTranslation, string ModifiedComment, SystemLanguage PreviewLanguage)>>();
 
         /// <summary>
+        /// Translation search tokens
+        /// </summary>
+        private readonly List<string> translationSearchTokens = new List<string>();
+
+        /// <summary>
         /// XLIFF
         /// </summary>
         private IXLIFF xliff;
+
+        /// <summary>
+        /// Translations search field
+        /// </summary>
+        private SearchField translationsSearchField;
+
+        /// <summary>
+        /// Translations search query
+        /// </summary>
+        private string translationsSearchQuery = string.Empty;
 
         /// <summary>
         /// Scroll position
@@ -79,6 +95,11 @@ namespace UnityTranslatorEditor.EditorWindows
             }
             return stringTranslation;
         }
+
+        /// <summary>
+        /// Gets invoked when editor window gets enabled
+        /// </summary>
+        private void OnEnable() => translationsSearchField = new SearchField();
 
         /// <summary>
         /// Gets invoked when GUI needs to be drawn
@@ -161,6 +182,7 @@ namespace UnityTranslatorEditor.EditorWindows
                         keys.Clear();
                     }
                 }
+                SearchUtilities.DrawSearchField(translationsSearchField, ref translationsSearchQuery, translationSearchTokens);
                 foreach (SystemLanguage language in languageImportOrder)
                 {
                     GUILayout.Box(string.Empty, GUILayout.Width(Screen.width), GUILayout.Height(3.0f));
@@ -181,7 +203,20 @@ namespace UnityTranslatorEditor.EditorWindows
                             if (TryGetStringTranslation(translation.Key, out StringTranslationObjectScript string_translation))
                             {
                                 string original_text = string_translation.Translation.GetValue(language);
-                                if ((original_text != translation.Value) || (string_translation.Comment != comment))
+                                if
+                                (
+                                    (
+                                        (original_text != translation.Value) ||
+                                        (string_translation.Comment != comment)
+                                    ) &&
+                                    (
+                                        SearchUtilities.IsContainedInSearch(string_translation.name, translationSearchTokens) ||
+                                        SearchUtilities.IsContainedInSearch(translation.Value, translationSearchTokens) ||
+                                        SearchUtilities.IsContainedInSearch(comment, translationSearchTokens) ||
+                                        SearchUtilities.IsContainedInSearch(original_text, translationSearchTokens) ||
+                                        SearchUtilities.IsContainedInSearch(string_translation.Comment, translationSearchTokens)
+                                    )
+                                )
                                 {
                                     if (!modified_translations.TryGetValue(translation.Key, out (bool IsSelected, string ModifiedTranslation, string ModifiedComment, SystemLanguage PreviewLanguage) modified_translation))
                                     {
@@ -229,7 +264,12 @@ namespace UnityTranslatorEditor.EditorWindows
                                     }
                                 }
                             }
-                            else
+                            else if
+                            (
+                                SearchUtilities.IsContainedInSearch(Path.GetFileNameWithoutExtension(translation.Key), translationSearchTokens) ||
+                                SearchUtilities.IsContainedInSearch(translation.Value, translationSearchTokens) ||
+                                SearchUtilities.IsContainedInSearch(comment, translationSearchTokens)
+                            )
                             {
                                 if (!modified_translations.TryGetValue(translation.Key, out (bool IsSelected, string ModifiedTranslation, string ModifiedComment, SystemLanguage PreviewLanguage) modified_translation))
                                 {

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using UnityEditor;
+using UnityEditor.IMGUI.Controls;
 using UnityEngine;
 using UnityTranslator;
 using UnityTranslator.Data;
@@ -33,6 +34,11 @@ namespace UnityTranslatorEditor.EditorWindows
             "1.2",
             "2.0"
         };
+
+        /// <summary>
+        /// Translation search tokens
+        /// </summary>
+        private readonly List<string> translationSearchTokens = new List<string>();
 
         /// <summary>
         /// Edit audio clip translation dictionary
@@ -70,6 +76,11 @@ namespace UnityTranslatorEditor.EditorWindows
         private readonly Dictionary<int, SystemLanguage> translationObjectLanguagePreview = new Dictionary<int, SystemLanguage>();
 
         /// <summary>
+        /// Translations search field
+        /// </summary>
+        private SearchField translationsSearchField;
+
+        /// <summary>
         /// Target language
         /// </summary>
         private SystemLanguage targetLanguage = SystemLanguage.English;
@@ -85,14 +96,19 @@ namespace UnityTranslatorEditor.EditorWindows
         private bool isShowingMissingTranslationsOnly;
 
         /// <summary>
+        /// Scroll position
+        /// </summary>
+        private Vector2 scrollPosition = Vector2.zero;
+
+        /// <summary>
         /// Selected export XLIFF specification index
         /// </summary>
         private EXLIFFSpecification selectedExportXLIFFSpecification;
 
         /// <summary>
-        /// Scroll position
+        /// Translations search query
         /// </summary>
-        private Vector2 scrollPosition = Vector2.zero;
+        private string translationsSearchQuery = string.Empty;
 
         /// <summary>
         /// Audio clip translations
@@ -132,16 +148,16 @@ namespace UnityTranslatorEditor.EditorWindows
         /// <summary>
         /// Selected tab index
         /// </summary>
-        private int selectedTabIndex = 2;
+        private int selectedTabIndex = 4;
 
         /// <summary>
-        /// Show window
+        /// Shows a window
         /// </summary>
         [MenuItem("Window/Translator")]
         public static void ShowWindow() => GetWindow<TranslatorEditorWindowScript>("Translator");
 
         /// <summary>
-        /// Get translations
+        /// Gets translations
         /// </summary>
         /// <typeparam name="T">Translation object type</typeparam>
         /// <param name="isShowingMissingTranslationsOnly">Is showing missing translations only</param>
@@ -204,89 +220,92 @@ namespace UnityTranslatorEditor.EditorWindows
             bool is_updating_translations = false;
             foreach ((TTranslationObject Translation, bool IsMissing) in translations)
             {
-                int key = Translation.GetInstanceID();
-                is_even_entry = !is_even_entry;
-                GUI.backgroundColor = default_background_color;
-                GUILayout.Box(GUIContent.none, entry_divider_gui_layout_options);
-                GUILayout.BeginHorizontal();
-                GUILayout.BeginVertical();
-                bool is_edited = editTranslationDictionary.TryGetValue(key, out (TValue Value, string Comment) translation);
-                if (is_edited)
+                if (SearchUtilities.IsContainedInSearch(Translation.name, translationSearchTokens))
                 {
-                    GUI.backgroundColor = Color.green;
-                    if (GUILayout.Button("Apply", apply_or_revert_gui_layout_options))
+                    int key = Translation.GetInstanceID();
+                    is_even_entry = !is_even_entry;
+                    GUI.backgroundColor = default_background_color;
+                    GUILayout.Box(GUIContent.none, entry_divider_gui_layout_options);
+                    GUILayout.BeginHorizontal();
+                    GUILayout.BeginVertical();
+                    bool is_edited = editTranslationDictionary.TryGetValue(key, out (TValue Value, string Comment) translation);
+                    if (is_edited)
                     {
-                        Translation.Translation.Insert(translation.Value, targetLanguage);
-                        Translation.SetComment(translation.Comment);
-                        editTranslationDictionary.Remove(key);
-                        is_edited = false;
-                        is_updating_translations = true;
-                        EditorUtility.SetDirty(Translation);
-                        GUI.FocusControl(null);
+                        GUI.backgroundColor = Color.green;
+                        if (GUILayout.Button("Apply", apply_or_revert_gui_layout_options))
+                        {
+                            Translation.Translation.Insert(translation.Value, targetLanguage);
+                            Translation.SetComment(translation.Comment);
+                            editTranslationDictionary.Remove(key);
+                            is_edited = false;
+                            is_updating_translations = true;
+                            EditorUtility.SetDirty(Translation);
+                            GUI.FocusControl(null);
+                        }
+                        GUI.backgroundColor = Color.red;
+                        if (GUILayout.Button("Revert", apply_or_revert_gui_layout_options))
+                        {
+                            editTranslationDictionary.Remove(key);
+                            is_edited = false;
+                            translation = (Translation.Translation.GetValue(targetLanguage), Translation.Comment);
+                            is_updating_translations = true;
+                            GUI.FocusControl(null);
+                        }
+                        GUI.backgroundColor = default_background_color;
                     }
-                    GUI.backgroundColor = Color.red;
-                    if (GUILayout.Button("Revert", apply_or_revert_gui_layout_options))
+                    else
                     {
-                        editTranslationDictionary.Remove(key);
-                        is_edited = false;
-                        translation = (Translation.Translation.GetValue(targetLanguage), Translation.Comment);
-                        is_updating_translations = true;
+                        GUILayout.Button(string.Empty, no_apply_or_revert_gui_layout_options);
+                        GUILayout.Button(string.Empty, no_apply_or_revert_gui_layout_options);
+                    }
+                    GUILayout.EndVertical();
+                    TValue original_value = Translation.Translation.GetValue(targetLanguage);
+                    TValue value = is_edited ? translation.Value : original_value;
+                    GUI.backgroundColor = is_edited ? Color.yellow : (IsMissing ? Color.red : (is_even_entry ? light_background_color : default_background_color));
+                    GUILayout.BeginVertical();
+                    EditorGUILayout.ObjectField(Translation, typeof(TTranslationObject), true, asset_gui_layout_options);
+                    TValue input = (TValue)EditorGUILayout.ObjectField(value, typeof(TValue), true, translation_gui_layout_options);
+                    GUI.backgroundColor = default_background_color;
+                    GUILayout.Box(GUIContent.none, preview_translation_divider_gui_layout_options);
+                    SystemLanguage preview_language = translationObjectLanguagePreview.TryGetValue(key, out SystemLanguage selected_preview_language) ? selected_preview_language : sourceLanguage;
+                    GUI.backgroundColor = is_even_entry ? light_background_color : default_background_color;
+                    selected_preview_language = (SystemLanguage)EditorGUILayout.EnumPopup("Preview", preview_language, preview_translation_gui_layout_options);
+                    if (preview_language != selected_preview_language)
+                    {
+                        preview_language = selected_preview_language;
+                        if (translationObjectLanguagePreview.ContainsKey(key))
+                        {
+                            translationObjectLanguagePreview[key] = preview_language;
+                        }
+                        else
+                        {
+                            translationObjectLanguagePreview.Add(key, preview_language);
+                        }
+                    }
+                    TValue language_preview_value = Translation.Translation.GetValue(preview_language);
+                    if (EditorGUILayout.ObjectField(language_preview_value, typeof(TValue), true, translation_gui_layout_options) != language_preview_value)
+                    {
                         GUI.FocusControl(null);
                     }
                     GUI.backgroundColor = default_background_color;
-                }
-                else
-                {
-                    GUILayout.Button(string.Empty, no_apply_or_revert_gui_layout_options);
-                    GUILayout.Button(string.Empty, no_apply_or_revert_gui_layout_options);
-                }
-                GUILayout.EndVertical();
-                TValue original_value = Translation.Translation.GetValue(targetLanguage);
-                TValue value = is_edited ? translation.Value : original_value;
-                GUI.backgroundColor = is_edited ? Color.yellow : (IsMissing ? Color.red : (is_even_entry ? light_background_color : default_background_color));
-                GUILayout.BeginVertical();
-                EditorGUILayout.ObjectField(Translation, typeof(TTranslationObject), true, asset_gui_layout_options);
-                TValue input = (TValue)EditorGUILayout.ObjectField(value, typeof(TValue), true, translation_gui_layout_options);
-                GUI.backgroundColor = default_background_color;
-                GUILayout.Box(GUIContent.none, preview_translation_divider_gui_layout_options);
-                SystemLanguage preview_language = translationObjectLanguagePreview.TryGetValue(key, out SystemLanguage selected_preview_language) ? selected_preview_language : sourceLanguage;
-                GUI.backgroundColor = is_even_entry ? light_background_color : default_background_color;
-                selected_preview_language = (SystemLanguage)EditorGUILayout.EnumPopup("Preview", preview_language, preview_translation_gui_layout_options);
-                if (preview_language != selected_preview_language)
-                {
-                    preview_language = selected_preview_language;
-                    if (translationObjectLanguagePreview.ContainsKey(key))
+                    GUILayout.EndVertical();
+                    string comment = is_edited ? translation.Comment : Translation.Comment;
+                    GUI.backgroundColor = is_edited ? Color.yellow : (IsMissing ? Color.red : (is_even_entry ? light_background_color : default_background_color));
+                    comment = GUILayout.TextArea(comment, comment_gui_layout_options);
+                    GUI.backgroundColor = default_background_color;
+                    if ((input != original_value) || (comment != Translation.Comment))
                     {
-                        translationObjectLanguagePreview[key] = preview_language;
+                        if (editTranslationDictionary.ContainsKey(key))
+                        {
+                            editTranslationDictionary[key] = (input, comment);
+                        }
+                        else
+                        {
+                            editTranslationDictionary.Add(key, (input, comment));
+                        }
                     }
-                    else
-                    {
-                        translationObjectLanguagePreview.Add(key, preview_language);
-                    }
+                    GUILayout.EndHorizontal();
                 }
-                TValue language_preview_value = Translation.Translation.GetValue(preview_language);
-                if (EditorGUILayout.ObjectField(language_preview_value, typeof(TValue), true, translation_gui_layout_options) != language_preview_value)
-                {
-                    GUI.FocusControl(null);
-                }
-                GUI.backgroundColor = default_background_color;
-                GUILayout.EndVertical();
-                string comment = is_edited ? translation.Comment : Translation.Comment;
-                GUI.backgroundColor = is_edited ? Color.yellow : (IsMissing ? Color.red : (is_even_entry ? light_background_color : default_background_color));
-                comment = GUILayout.TextArea(comment, comment_gui_layout_options);
-                GUI.backgroundColor = default_background_color;
-                if ((input != original_value) || (comment != Translation.Comment))
-                {
-                    if (editTranslationDictionary.ContainsKey(key))
-                    {
-                        editTranslationDictionary[key] = (input, comment);
-                    }
-                    else
-                    {
-                        editTranslationDictionary.Add(key, (input, comment));
-                    }
-                }
-                GUILayout.EndHorizontal();
             }
             GUI.backgroundColor = default_background_color;
             if (is_updating_translations)
@@ -340,93 +359,101 @@ namespace UnityTranslatorEditor.EditorWindows
             bool is_updating_translations = false;
             foreach ((StringTranslationObjectScript Translation, bool IsMissing) in stringTranslations)
             {
-                int key = Translation.GetInstanceID();
-                is_even_entry = !is_even_entry;
-                GUI.backgroundColor = default_background_color;
-                GUILayout.Box(GUIContent.none, entry_divider_gui_layout_options);
-                GUILayout.BeginHorizontal();
-                GUILayout.BeginVertical();
-                bool is_edited = editStringTranslationDictionary.TryGetValue(key, out (string Value, string Comment) translation);
-                if (is_edited)
+                string original_value = Translation.Translation.GetValue(targetLanguage);
+                if
+                (
+                    SearchUtilities.IsContainedInSearch(Translation.name, translationSearchTokens) ||
+                    SearchUtilities.IsContainedInSearch(original_value, translationSearchTokens) ||
+                    SearchUtilities.IsContainedInSearch(Translation.Comment, translationSearchTokens)
+                )
                 {
-                    GUI.backgroundColor = Color.green;
-                    if (GUILayout.Button("Apply", apply_or_revert_gui_layout_options))
+                    int key = Translation.GetInstanceID();
+                    is_even_entry = !is_even_entry;
+                    GUI.backgroundColor = default_background_color;
+                    GUILayout.Box(GUIContent.none, entry_divider_gui_layout_options);
+                    GUILayout.BeginHorizontal();
+                    GUILayout.BeginVertical();
+                    bool is_edited = editStringTranslationDictionary.TryGetValue(key, out (string Value, string Comment) translation);
+                    if (is_edited)
                     {
-                        Translation.Translation.Insert(translation.Value, targetLanguage);
-                        Translation.SetComment(translation.Comment);
-                        editStringTranslationDictionary.Remove(key);
-                        is_edited = false;
-                        is_updating_translations = true;
-                        EditorUtility.SetDirty(Translation);
-                        GUI.FocusControl(null);
+                        GUI.backgroundColor = Color.green;
+                        if (GUILayout.Button("Apply", apply_or_revert_gui_layout_options))
+                        {
+                            Translation.Translation.Insert(translation.Value, targetLanguage);
+                            Translation.SetComment(translation.Comment);
+                            editStringTranslationDictionary.Remove(key);
+                            is_edited = false;
+                            is_updating_translations = true;
+                            EditorUtility.SetDirty(Translation);
+                            GUI.FocusControl(null);
+                        }
+                        GUI.backgroundColor = Color.red;
+                        if (GUILayout.Button("Revert", apply_or_revert_gui_layout_options))
+                        {
+                            editStringTranslationDictionary.Remove(key);
+                            is_edited = false;
+                            translation = (Translation.Translation.GetValue(targetLanguage), Translation.Comment);
+                            is_updating_translations = true;
+                            GUI.FocusControl(null);
+                        }
+                        GUI.backgroundColor = default_background_color;
                     }
-                    GUI.backgroundColor = Color.red;
-                    if (GUILayout.Button("Revert", apply_or_revert_gui_layout_options))
+                    else
                     {
-                        editStringTranslationDictionary.Remove(key);
-                        is_edited = false;
-                        translation = (Translation.Translation.GetValue(targetLanguage), Translation.Comment);
-                        is_updating_translations = true;
+                        GUILayout.Button(string.Empty, no_apply_or_revert_gui_layout_options);
+                        GUILayout.Button(string.Empty, no_apply_or_revert_gui_layout_options);
+                    }
+                    GUILayout.EndVertical();
+                    string value = is_edited ? translation.Value : original_value;
+                    GUI.backgroundColor = is_edited ? Color.yellow : (IsMissing ? Color.red : (is_even_entry ? light_background_color : default_background_color));
+                    GUILayout.BeginVertical();
+                    EditorGUILayout.ObjectField(Translation, typeof(StringTranslationObjectScript), true, asset_gui_layout_options);
+                    string input = EditorGUILayout.TextArea(value, translation_gui_layout_options);
+                    GUI.backgroundColor = default_background_color;
+                    GUILayout.Box(GUIContent.none, preview_translation_divider_gui_layout_options);
+                    SystemLanguage preview_language = translationObjectLanguagePreview.TryGetValue(key, out SystemLanguage selected_preview_language) ? selected_preview_language : sourceLanguage;
+                    GUI.backgroundColor = is_even_entry ? light_background_color : default_background_color;
+                    selected_preview_language = (SystemLanguage)EditorGUILayout.EnumPopup("Preview", preview_language, preview_translation_gui_layout_options);
+                    if (preview_language != selected_preview_language)
+                    {
+                        preview_language = selected_preview_language;
+                        if (translationObjectLanguagePreview.ContainsKey(key))
+                        {
+                            translationObjectLanguagePreview[key] = preview_language;
+                        }
+                        else
+                        {
+                            translationObjectLanguagePreview.Add(key, preview_language);
+                        }
+                    }
+                    string language_preview_string = Translation.Translation.GetValue(preview_language);
+                    if (EditorGUILayout.TextArea(language_preview_string, translation_gui_layout_options) != language_preview_string)
+                    {
                         GUI.FocusControl(null);
                     }
                     GUI.backgroundColor = default_background_color;
-                }
-                else
-                {
-                    GUILayout.Button(string.Empty, no_apply_or_revert_gui_layout_options);
-                    GUILayout.Button(string.Empty, no_apply_or_revert_gui_layout_options);
-                }
-                GUILayout.EndVertical();
-                string original_value = Translation.Translation.GetValue(targetLanguage);
-                string value = is_edited ? translation.Value : original_value;
-                GUI.backgroundColor = is_edited ? Color.yellow : (IsMissing ? Color.red : (is_even_entry ? light_background_color : default_background_color));
-                GUILayout.BeginVertical();
-                EditorGUILayout.ObjectField(Translation, typeof(StringTranslationObjectScript), true, asset_gui_layout_options);
-                string input = EditorGUILayout.TextArea(value, translation_gui_layout_options);
-                GUI.backgroundColor = default_background_color;
-                GUILayout.Box(GUIContent.none, preview_translation_divider_gui_layout_options);
-                SystemLanguage preview_language = translationObjectLanguagePreview.TryGetValue(key, out SystemLanguage selected_preview_language) ? selected_preview_language : sourceLanguage;
-                GUI.backgroundColor = is_even_entry ? light_background_color : default_background_color;
-                selected_preview_language = (SystemLanguage)EditorGUILayout.EnumPopup("Preview", preview_language, preview_translation_gui_layout_options);
-                if (preview_language != selected_preview_language)
-                {
-                    preview_language = selected_preview_language;
-                    if (translationObjectLanguagePreview.ContainsKey(key))
+                    GUILayout.EndVertical();
+                    string comment = is_edited ? translation.Comment : Translation.Comment;
+                    GUI.backgroundColor = is_edited ? Color.yellow : (IsMissing ? Color.red : (is_even_entry ? light_background_color : default_background_color));
+                    comment = GUILayout.TextArea(comment, comment_gui_layout_options);
+                    GUI.backgroundColor = default_background_color;
+                    if ((input != original_value) || (comment != Translation.Comment))
                     {
-                        translationObjectLanguagePreview[key] = preview_language;
+                        if (editStringTranslationDictionary.ContainsKey(key))
+                        {
+                            editStringTranslationDictionary[key] = (input, comment);
+                        }
+                        else
+                        {
+                            editStringTranslationDictionary.Add(key, (input, comment));
+                        }
                     }
                     else
                     {
-                        translationObjectLanguagePreview.Add(key, preview_language);
+                        editStringTranslationDictionary.Remove(key);
                     }
+                    GUILayout.EndHorizontal();
                 }
-                string language_preview_string = Translation.Translation.GetValue(preview_language);
-                if (EditorGUILayout.TextArea(language_preview_string, translation_gui_layout_options) != language_preview_string)
-                {
-                    GUI.FocusControl(null);
-                }
-                GUI.backgroundColor = default_background_color;
-                GUILayout.EndVertical();
-                string comment = is_edited ? translation.Comment : Translation.Comment;
-                GUI.backgroundColor = is_edited ? Color.yellow : (IsMissing ? Color.red : (is_even_entry ? light_background_color : default_background_color));
-                comment = GUILayout.TextArea(comment, comment_gui_layout_options);
-                GUI.backgroundColor = default_background_color;
-                if ((input != original_value) || (comment != Translation.Comment))
-                {
-                    if (editStringTranslationDictionary.ContainsKey(key))
-                    {
-                        editStringTranslationDictionary[key] = (input, comment);
-                    }
-                    else
-                    {
-                        editStringTranslationDictionary.Add(key, (input, comment));
-                    }
-                }
-                else
-                {
-                    editStringTranslationDictionary.Remove(key);
-                }
-                GUILayout.EndHorizontal();
             }
             GUI.backgroundColor = default_background_color;
             if (is_updating_translations)
@@ -452,6 +479,11 @@ namespace UnityTranslatorEditor.EditorWindows
             stringTranslations = GetTranslations<StringTranslationObjectScript>(isShowingMissingTranslationsOnly);
             textureTranslations = GetTranslations<TextureTranslationObjectScript>(isShowingMissingTranslationsOnly);
         }
+
+        /// <summary>
+        /// Gets invoked when editor window gets enabled
+        /// </summary>
+        private void OnEnable() => translationsSearchField = new SearchField();
 
         /// <summary>
         /// Gets invoked when GUI needs to be drawn
@@ -691,6 +723,7 @@ namespace UnityTranslatorEditor.EditorWindows
             }
             GUI.backgroundColor = default_background_color;
             GUILayout.EndHorizontal();
+            SearchUtilities.DrawSearchField(translationsSearchField, ref translationsSearchQuery, translationSearchTokens);
             if ((selectedTabIndex >= 0) && (selectedTabIndex < tabs.Count))
             {
                 tabs[selectedTabIndex].OnTabDrawn();
