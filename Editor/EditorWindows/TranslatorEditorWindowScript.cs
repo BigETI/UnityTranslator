@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using UnityEditor;
-using UnityEditor.IMGUI.Controls;
+using UnityEditor.AnimatedValues;
 using UnityEngine;
 using UnityTranslator;
 using UnityTranslator.Data;
@@ -22,7 +22,7 @@ namespace UnityTranslatorEditor.EditorWindows
         /// <summary>
         /// Table margin
         /// </summary>
-        private static readonly float tableMargin = 30.0f;
+        private static readonly float tableMargin = 40.0f;
 
         /// <summary>
         /// XLIFF versions
@@ -34,11 +34,6 @@ namespace UnityTranslatorEditor.EditorWindows
             "1.2",
             "2.0"
         };
-
-        /// <summary>
-        /// Translation search tokens
-        /// </summary>
-        private readonly List<string> translationSearchTokens = new List<string>();
 
         /// <summary>
         /// Edit audio clip translation dictionary
@@ -76,9 +71,14 @@ namespace UnityTranslatorEditor.EditorWindows
         private readonly Dictionary<int, SystemLanguage> translationObjectLanguagePreview = new Dictionary<int, SystemLanguage>();
 
         /// <summary>
-        /// Translations search field
+        /// Is showing files importer/exporter
         /// </summary>
-        private SearchField translationsSearchField;
+        private AnimBool isShowingFilesImporterExporter = new AnimBool();
+
+        /// <summary>
+        /// Is showing translations
+        /// </summary>
+        private AnimBool isShowingTranslations = new AnimBool();
 
         /// <summary>
         /// Target language
@@ -106,9 +106,9 @@ namespace UnityTranslatorEditor.EditorWindows
         private EXLIFFSpecification selectedExportXLIFFSpecification;
 
         /// <summary>
-        /// Translations search query
+        /// Translations tokenized search field
         /// </summary>
-        private string translationsSearchQuery = string.Empty;
+        private TokenizedSearchField translationsTokenizedSearchField;
 
         /// <summary>
         /// Audio clip translations
@@ -149,6 +149,26 @@ namespace UnityTranslatorEditor.EditorWindows
         /// Selected tab index
         /// </summary>
         private int selectedTabIndex = 4;
+
+        /// <summary>
+        /// Draws target and source languages popups
+        /// </summary>
+        /// <param name="isShowingIsShowingMissingTranslationsOnlyToggle">IS showing "isShowingMissingTranslationsOnly" toggle</param>
+        private void DrawTargetAndSourceLanguagesPopups(bool isShowingIsShowingMissingTranslationsOnlyToggle)
+        {
+            SystemLanguage to_language = (SystemLanguage)EditorGUILayout.EnumPopup("Target language", targetLanguage);
+            GUILayout.Label("                                                        ↑");
+            SystemLanguage source_language = (SystemLanguage)EditorGUILayout.EnumPopup("Source language", sourceLanguage);
+            bool is_showing_missing_translations = isShowingIsShowingMissingTranslationsOnlyToggle ? GUILayout.Toggle(isShowingMissingTranslationsOnly, "Is showing missing translations only") : isShowingMissingTranslationsOnly;
+            if ((targetLanguage != to_language) || (sourceLanguage != source_language) || (isShowingMissingTranslationsOnly != is_showing_missing_translations))
+            {
+                targetLanguage = to_language;
+                sourceLanguage = source_language;
+                isShowingMissingTranslationsOnly = is_showing_missing_translations;
+                UpdateTranslations();
+                translationObjectLanguagePreview.Clear();
+            }
+        }
 
         /// <summary>
         /// Shows a window
@@ -220,7 +240,7 @@ namespace UnityTranslatorEditor.EditorWindows
             bool is_updating_translations = false;
             foreach ((TTranslationObject Translation, bool IsMissing) in translations)
             {
-                if (SearchUtilities.IsContainedInSearch(Translation.name, translationSearchTokens))
+                if (translationsTokenizedSearchField.IsContainedInSearch(Translation.name))
                 {
                     int key = Translation.GetInstanceID();
                     is_even_entry = !is_even_entry;
@@ -263,13 +283,15 @@ namespace UnityTranslatorEditor.EditorWindows
                     TValue value = is_edited ? translation.Value : original_value;
                     GUI.backgroundColor = is_edited ? Color.yellow : (IsMissing ? Color.red : (is_even_entry ? light_background_color : default_background_color));
                     GUILayout.BeginVertical();
+                    EditorGUI.BeginDisabledGroup(true);
                     EditorGUILayout.ObjectField(Translation, typeof(TTranslationObject), true, asset_gui_layout_options);
+                    EditorGUI.EndDisabledGroup();
                     TValue input = (TValue)EditorGUILayout.ObjectField(value, typeof(TValue), true, translation_gui_layout_options);
                     GUI.backgroundColor = default_background_color;
                     GUILayout.Box(GUIContent.none, preview_translation_divider_gui_layout_options);
                     SystemLanguage preview_language = translationObjectLanguagePreview.TryGetValue(key, out SystemLanguage selected_preview_language) ? selected_preview_language : sourceLanguage;
                     GUI.backgroundColor = is_even_entry ? light_background_color : default_background_color;
-                    selected_preview_language = (SystemLanguage)EditorGUILayout.EnumPopup("Preview", preview_language, preview_translation_gui_layout_options);
+                    selected_preview_language = (SystemLanguage)EditorGUILayout.EnumPopup("Source language", preview_language, preview_translation_gui_layout_options);
                     if (preview_language != selected_preview_language)
                     {
                         preview_language = selected_preview_language;
@@ -283,10 +305,9 @@ namespace UnityTranslatorEditor.EditorWindows
                         }
                     }
                     TValue language_preview_value = Translation.Translation.GetValue(preview_language);
-                    if (EditorGUILayout.ObjectField(language_preview_value, typeof(TValue), true, translation_gui_layout_options) != language_preview_value)
-                    {
-                        GUI.FocusControl(null);
-                    }
+                    EditorGUI.BeginDisabledGroup(true);
+                    EditorGUILayout.ObjectField(language_preview_value, typeof(TValue), true, translation_gui_layout_options);
+                    EditorGUI.EndDisabledGroup();
                     GUI.backgroundColor = default_background_color;
                     GUILayout.EndVertical();
                     string comment = is_edited ? translation.Comment : Translation.Comment;
@@ -312,6 +333,30 @@ namespace UnityTranslatorEditor.EditorWindows
             {
                 UpdateTranslations();
             }
+        }
+
+        /// <summary>
+        /// Applies changes to edited translations
+        /// </summary>
+        /// <typeparam name="TTranslationObject">Translation object type</typeparam>
+        /// <typeparam name="TValue">Value type</typeparam>
+        /// <typeparam name="TTranslationData">Translation data type</typeparam>
+        /// <typeparam name="TTranslatedData">Translated data type</typeparam>
+        /// <param name="translations">Translations</param>
+        /// <param name="editTranslationDictionary">Edit translation dictionary</param>
+        private void ApplyChanges<TTranslationObject, TValue, TTranslationData, TTranslatedData>(IReadOnlyList<(TTranslationObject Translation, bool IsMissing)> translations, Dictionary<int, (TValue Value, string Comment)> editTranslationDictionary) where TTranslationObject : UnityEngine.Object, IBaseTranslationObject, IReadOnlyTranslationData<TValue, TTranslatedData>, ITranslationDataWrapper<TValue, TTranslationData, TTranslatedData>, IComparable<TTranslationObject> where TValue : UnityEngine.Object where TTranslationData : ITranslationData<TValue, TTranslatedData> where TTranslatedData : ITranslatedData<TValue>
+        {
+            foreach ((TTranslationObject Translation, _) in translations)
+            {
+                int key = Translation.GetInstanceID();
+                if (editTranslationDictionary.TryGetValue(key, out (TValue Value, string Comment) translation))
+                {
+                    Translation.Translation.Insert(translation.Value, targetLanguage);
+                    Translation.SetComment(translation.Comment);
+                    EditorUtility.SetDirty(Translation);
+                }
+            }
+            editTranslationDictionary.Clear();
         }
 
         /// <summary>
@@ -362,9 +407,9 @@ namespace UnityTranslatorEditor.EditorWindows
                 string original_value = Translation.Translation.GetValue(targetLanguage);
                 if
                 (
-                    SearchUtilities.IsContainedInSearch(Translation.name, translationSearchTokens) ||
-                    SearchUtilities.IsContainedInSearch(original_value, translationSearchTokens) ||
-                    SearchUtilities.IsContainedInSearch(Translation.Comment, translationSearchTokens)
+                    translationsTokenizedSearchField.IsContainedInSearch(Translation.name) ||
+                    translationsTokenizedSearchField.IsContainedInSearch(original_value) ||
+                    translationsTokenizedSearchField.IsContainedInSearch(Translation.Comment)
                 )
                 {
                     int key = Translation.GetInstanceID();
@@ -407,13 +452,15 @@ namespace UnityTranslatorEditor.EditorWindows
                     string value = is_edited ? translation.Value : original_value;
                     GUI.backgroundColor = is_edited ? Color.yellow : (IsMissing ? Color.red : (is_even_entry ? light_background_color : default_background_color));
                     GUILayout.BeginVertical();
+                    EditorGUI.BeginDisabledGroup(true);
                     EditorGUILayout.ObjectField(Translation, typeof(StringTranslationObjectScript), true, asset_gui_layout_options);
+                    EditorGUI.EndDisabledGroup();
                     string input = EditorGUILayout.TextArea(value, translation_gui_layout_options);
                     GUI.backgroundColor = default_background_color;
                     GUILayout.Box(GUIContent.none, preview_translation_divider_gui_layout_options);
                     SystemLanguage preview_language = translationObjectLanguagePreview.TryGetValue(key, out SystemLanguage selected_preview_language) ? selected_preview_language : sourceLanguage;
                     GUI.backgroundColor = is_even_entry ? light_background_color : default_background_color;
-                    selected_preview_language = (SystemLanguage)EditorGUILayout.EnumPopup("Preview", preview_language, preview_translation_gui_layout_options);
+                    selected_preview_language = (SystemLanguage)EditorGUILayout.EnumPopup("Source language", preview_language, preview_translation_gui_layout_options);
                     if (preview_language != selected_preview_language)
                     {
                         preview_language = selected_preview_language;
@@ -427,15 +474,17 @@ namespace UnityTranslatorEditor.EditorWindows
                         }
                     }
                     string language_preview_string = Translation.Translation.GetValue(preview_language);
+                    EditorGUI.BeginDisabledGroup(true);
                     if (EditorGUILayout.TextArea(language_preview_string, translation_gui_layout_options) != language_preview_string)
                     {
                         GUI.FocusControl(null);
                     }
+                    EditorGUI.EndDisabledGroup();
                     GUI.backgroundColor = default_background_color;
                     GUILayout.EndVertical();
                     string comment = is_edited ? translation.Comment : Translation.Comment;
                     GUI.backgroundColor = is_edited ? Color.yellow : (IsMissing ? Color.red : (is_even_entry ? light_background_color : default_background_color));
-                    comment = GUILayout.TextArea(comment, comment_gui_layout_options);
+                    comment = EditorGUILayout.TextArea(comment, comment_gui_layout_options);
                     GUI.backgroundColor = default_background_color;
                     if ((input != original_value) || (comment != Translation.Comment))
                     {
@@ -483,7 +532,14 @@ namespace UnityTranslatorEditor.EditorWindows
         /// <summary>
         /// Gets invoked when editor window gets enabled
         /// </summary>
-        private void OnEnable() => translationsSearchField = new SearchField();
+        private void OnEnable()
+        {
+            translationsTokenizedSearchField = new TokenizedSearchField();
+            isShowingFilesImporterExporter = new AnimBool();
+            isShowingFilesImporterExporter.valueChanged.AddListener(Repaint);
+            isShowingTranslations = new AnimBool(true);
+            isShowingTranslations.valueChanged.AddListener(Repaint);
+        }
 
         /// <summary>
         /// Gets invoked when GUI needs to be drawn
@@ -499,153 +555,33 @@ namespace UnityTranslatorEditor.EditorWindows
                 ("Strings", StringsTabDrawnEvent),
                 ("Textures", TexturesTabDrawnEvent)
             };
-            GUILayout.Label("Translation options");
-            SystemLanguage to_language = (SystemLanguage)EditorGUILayout.EnumPopup("Translate to language", targetLanguage);
-            SystemLanguage source_language = (SystemLanguage)EditorGUILayout.EnumPopup("Source language", sourceLanguage);
-            bool is_showing_missing_translations = GUILayout.Toggle(isShowingMissingTranslationsOnly, "Is showing missing translations only");
-            if ((targetLanguage != to_language) || (sourceLanguage != source_language) || (isShowingMissingTranslationsOnly != is_showing_missing_translations))
-            {
-                targetLanguage = to_language;
-                sourceLanguage = source_language;
-                isShowingMissingTranslationsOnly = is_showing_missing_translations;
-                UpdateTranslations();
-                translationObjectLanguagePreview.Clear();
-            }
-            GUILayout.Space(21.0f);
-            scrollPosition = GUILayout.BeginScrollView(scrollPosition);
-            selectedExportXLIFFSpecification = (EXLIFFSpecification)EditorGUILayout.Popup("Export XLIFF version", (int)selectedExportXLIFFSpecification, xliffSpeficitations);
             GUILayout.BeginHorizontal();
-            if (GUILayout.Button("Import from XLIFF...", GUILayout.Width((Screen.width - tableMargin) / 3.0f)))
-            {
-                string file_path = EditorUtility.OpenFilePanel("Open XLIFF file", null, "xml");
-                if (!string.IsNullOrWhiteSpace(file_path))
-                {
-                    IXLIFF xliff = XLIFFImporter.ImportFromFile(file_path);
-                    if (xliff != null)
-                    {
-                        XLIFFImporterEditorWindowScript preview_translation_editor_window = GetWindow<XLIFFImporterEditorWindowScript>($"Importing XLIFF \"{ file_path }\"...", true, typeof(TranslatorEditorWindowScript));
-                        if (preview_translation_editor_window)
-                        {
-                            preview_translation_editor_window.XLIFF = xliff;
-                        }
-                    }
-                }
-            }
-            if (GUILayout.Button("Export to XLIFF", GUILayout.Width((Screen.width - tableMargin) / 3.0f)))
-            {
-                if (sourceLanguage == targetLanguage)
-                {
-                    EditorUtility.DisplayDialog("Source and target languages are same", "Please specify atleast a different target language to export to XLIFF.", "OK");
-                }
-                else
-                {
-                    string file_path = EditorUtility.SaveFilePanel("Save XLIFF file to...", null, "translations", "xml");
-                    if (!string.IsNullOrWhiteSpace(file_path))
-                    {
-                        IReadOnlyList<(StringTranslationObjectScript Translation, bool IsMissing)> string_translations = GetTranslations<StringTranslationObjectScript>(false);
-                        Dictionary<string, string> comments = new Dictionary<string, string>();
-                        Dictionary<string, string> source_translations = new Dictionary<string, string>();
-                        Dictionary<string, string> target_translations = new Dictionary<string, string>();
-                        Dictionary<SystemLanguage, Dictionary<string, string>> languages = new Dictionary<SystemLanguage, Dictionary<string, string>>
-                        {
-                            { sourceLanguage, source_translations },
-                            { targetLanguage, target_translations }
-                        };
-                        foreach ((StringTranslationObjectScript Translation, bool IsMissing) in string_translations)
-                        {
-                            string asset_path = AssetDatabase.GetAssetPath(Translation);
-                            if (!source_translations.ContainsKey(asset_path))
-                            {
-                                source_translations.Add(asset_path, Translation.TryGetValue(sourceLanguage, out string source_translation) ? source_translation : string.Empty);
-                                target_translations.Add(asset_path, Translation.TryGetValue(targetLanguage, out string target_translation) ? target_translation : string.Empty);
-                            }
-                            if (!string.IsNullOrWhiteSpace(Translation.Comment))
-                            {
-                                if (!comments.ContainsKey(asset_path))
-                                {
-                                    comments.Add(asset_path, Translation.Comment);
-                                }
-                            }
-                        }
-                        IReadOnlyList<IXLIFFDocument> xliff_documents = new XLIFF(selectedExportXLIFFSpecification, sourceLanguage, languages, comments).XLIFFDocuments;
-                        if (xliff_documents.Count == 1)
-                        {
-                            XLIFFExporter.ExportXLIFFDocumetToFile(xliff_documents[0], file_path);
-                        }
-                        else
-                        {
-                            foreach (IXLIFFDocument xliff_document in xliff_documents)
-                            {
-                                StringBuilder extended_file_path = new StringBuilder();
-                                extended_file_path.Append(Path.GetFileNameWithoutExtension(file_path));
-                                extended_file_path.Append('_');
-                                extended_file_path.Append(ISO639.GetLanguageCodeFromLanguage(xliff_document.SourceLanguage).ToUpper());
-                                extended_file_path.Append("To");
-                                foreach (SystemLanguage target_language in xliff_document.TargetLanguages)
-                                {
-                                    extended_file_path.Append(ISO639.GetLanguageCodeFromLanguage(target_language).ToUpper());
-                                }
-                                extended_file_path.Append(Path.GetExtension(file_path));
-                                XLIFFExporter.ExportXLIFFDocumetToFile(xliff_document, extended_file_path.ToString());
-                                extended_file_path.Clear();
-                            }
-                        }
-                    }
-                }
-            }
-            if (GUILayout.Button("Copy translation form to clipboard", GUILayout.Width((Screen.width - tableMargin) / 3.0f)))
-            {
-                StringBuilder sb = new StringBuilder("# Translation form\r\n\r\n## Description\r\nThis form is used to translate words into ");
-                sb.Append(targetLanguage.ToString());
-                sb.AppendLine(".");
-                sb.AppendLine("\r\n\r\n## Words\r\n");
-                UpdateTranslations();
-                foreach ((StringTranslationObjectScript Translation, _) in stringTranslations)
-                {
-                    if (!Translation.IsLanguageContained(targetLanguage))
-                    {
-                        sb.Append("### `");
-                        sb.Append(Translation.name);
-                        sb.AppendLine("`");
-                        sb.AppendLine();
-                        if (Translation.Comment != null)
-                        {
-                            if (Translation.Comment.Trim().Length > 0)
-                            {
-                                sb.Append("Comment: ");
-                                sb.AppendLine(Translation.Comment);
-                            }
-                        }
-                        foreach (TranslatedStringData translated_string in Translation.Translation.Values)
-                        {
-                            sb.Append("- In ");
-                            sb.Append(translated_string.Language.ToString());
-                            sb.Append(": \"");
-                            sb.Append(translated_string.Value);
-                            sb.AppendLine("\"");
-                        }
-                        sb.Append("\r\nWhat is it called in ");
-                        sb.Append(targetLanguage.ToString());
-                        sb.AppendLine("?: \r\n\r\n");
-                    }
-                }
-                sb.Append("Thank you for translating into ");
-                sb.Append(targetLanguage.ToString());
-                sb.AppendLine("!");
-                GUIUtility.systemCopyBuffer = sb.ToString();
-            }
-            GUILayout.EndHorizontal();
-            GUILayout.Space(21.0f);
-            GUILayout.BeginHorizontal();
-            if (GUILayout.Button("Update view", GUILayout.Width((Screen.width - tableMargin) / 3.0f)))
+            bool are_any_changes_pending =
+                (editAudioClipTranslationDictionary.Count > 0) ||
+                (editMaterialTranslationDictionary.Count > 0) ||
+                (editMeshTranslationDictionary.Count > 0) ||
+                (editSpriteTranslationDictionary.Count > 0) ||
+                (editStringTranslationDictionary.Count > 0) ||
+                (editTextureTranslationDictionary.Count > 0);
+            float screen_width = Screen.width - (are_any_changes_pending ? 19.0f : 13.0f);
+            float apply_revert_width = are_any_changes_pending ? (screen_width / 18.0f) : 0.0f;
+            GUILayout.Label(string.Empty, GUILayout.Width(are_any_changes_pending ? (screen_width * 5.0f / 6.0f) : (screen_width * 17.0f / 18.0f)));
+            if (GUILayout.Button("Refresh", GUILayout.Width(screen_width / 18.0f)))
             {
                 UpdateTranslations();
                 translationObjectLanguagePreview.Clear();
                 GUI.FocusControl(null);
             }
-            if (GUILayout.Button("Apply changes", GUILayout.Width((Screen.width - tableMargin) / 3.0f)))
+            Color default_background_color = GUI.backgroundColor;
+            GUI.backgroundColor = Color.green;
+            if (GUILayout.Button("Apply", GUILayout.Width(apply_revert_width)))
             {
                 UpdateTranslations();
+                ApplyChanges<AudioClipTranslationObjectScript, AudioClip, AudioClipTranslationData, TranslatedAudioClipData>(audioClipTranslations, editAudioClipTranslationDictionary);
+                ApplyChanges<MaterialTranslationObjectScript, Material, MaterialTranslationData, TranslatedMaterialData>(materialTranslations, editMaterialTranslationDictionary);
+                ApplyChanges<MeshTranslationObjectScript, Mesh, MeshTranslationData, TranslatedMeshData>(meshTranslations, editMeshTranslationDictionary);
+                ApplyChanges<TextureTranslationObjectScript, Texture, TextureTranslationData, TranslatedTextureData>(textureTranslations, editTextureTranslationDictionary);
+                ApplyChanges<SpriteTranslationObjectScript, Sprite, SpriteTranslationData, TranslatedSpriteData>(spriteTranslations, editSpriteTranslationDictionary);
                 foreach ((StringTranslationObjectScript Translation, _) in stringTranslations)
                 {
                     int key = Translation.GetInstanceID();
@@ -656,79 +592,191 @@ namespace UnityTranslatorEditor.EditorWindows
                         EditorUtility.SetDirty(Translation);
                     }
                 }
-                foreach ((AudioClipTranslationObjectScript Translation, _) in audioClipTranslations)
-                {
-                    int key = Translation.GetInstanceID();
-                    if (editAudioClipTranslationDictionary.TryGetValue(key, out (AudioClip Value, string Comment) translation))
-                    {
-                        Translation.Translation.Insert(translation.Value, targetLanguage);
-                        Translation.SetComment(translation.Comment);
-                        EditorUtility.SetDirty(Translation);
-                    }
-                }
-                foreach ((TextureTranslationObjectScript Translation, _) in textureTranslations)
-                {
-                    int key = Translation.GetInstanceID();
-                    if (editTextureTranslationDictionary.TryGetValue(key, out (Texture Value, string Comment) translation))
-                    {
-                        Translation.Translation.Insert(translation.Value, targetLanguage);
-                        Translation.SetComment(translation.Comment);
-                        EditorUtility.SetDirty(Translation);
-                    }
-                }
-                foreach ((SpriteTranslationObjectScript Translation, _) in spriteTranslations)
-                {
-                    int key = Translation.GetInstanceID();
-                    if (editSpriteTranslationDictionary.TryGetValue(key, out (Sprite Value, string Comment) translation))
-                    {
-                        Translation.Translation.Insert(translation.Value, targetLanguage);
-                        Translation.SetComment(translation.Comment);
-                        EditorUtility.SetDirty(Translation);
-                    }
-                }
                 editStringTranslationDictionary.Clear();
-                editAudioClipTranslationDictionary.Clear();
-                editTextureTranslationDictionary.Clear();
-                editSpriteTranslationDictionary.Clear();
                 UpdateTranslations();
                 GUI.FocusControl(null);
             }
-            if (GUILayout.Button("Revert changes", GUILayout.Width((Screen.width - tableMargin) / 3.0f)))
+            GUI.backgroundColor = Color.red;
+            if (GUILayout.Button("Revert", GUILayout.Width(apply_revert_width)))
             {
-                editStringTranslationDictionary.Clear();
                 editAudioClipTranslationDictionary.Clear();
+                editMaterialTranslationDictionary.Clear();
+                editMeshTranslationDictionary.Clear();
                 editTextureTranslationDictionary.Clear();
                 editSpriteTranslationDictionary.Clear();
+                editStringTranslationDictionary.Clear();
                 UpdateTranslations();
                 GUI.FocusControl(null);
-            }
-            GUILayout.EndHorizontal();
-            GUILayout.Space(21.0f);
-            if (stringTranslations == null)
-            {
-                UpdateTranslations();
-            }
-            GUILayoutOption[] tab_button_gui_layout_options = new GUILayoutOption[] { GUILayout.Width((Screen.width - tableMargin) / tabs.Count), GUILayout.Height(20.0f) };
-            Color default_background_color = GUI.backgroundColor;
-            Color light_background_color = new Color(default_background_color.r, default_background_color.g, default_background_color.b * 1.25f, default_background_color.a);
-            GUILayout.BeginHorizontal();
-            for (int tab_index = 0; tab_index < tabs.Count; tab_index++)
-            {
-                GUI.backgroundColor = (tab_index == selectedTabIndex) ? light_background_color : default_background_color;
-                if (GUILayout.Button(tabs[tab_index].Name, tab_button_gui_layout_options))
-                {
-                    selectedTabIndex = tab_index;
-                    GUI.FocusControl(null);
-                }
             }
             GUI.backgroundColor = default_background_color;
             GUILayout.EndHorizontal();
-            SearchUtilities.DrawSearchField(translationsSearchField, ref translationsSearchQuery, translationSearchTokens);
-            if ((selectedTabIndex >= 0) && (selectedTabIndex < tabs.Count))
+            isShowingFilesImporterExporter.target = EditorGUILayout.BeginFoldoutHeaderGroup(isShowingFilesImporterExporter.target, "Import/Export files");
+            if (EditorGUILayout.BeginFadeGroup(isShowingFilesImporterExporter.faded))
             {
-                tabs[selectedTabIndex].OnTabDrawn();
+                GUILayout.Box(GUIContent.none, GUILayout.Width(screen_width), GUILayout.Height(3.0f));
+                DrawTargetAndSourceLanguagesPopups(false);
+                GUILayout.Box(GUIContent.none, GUILayout.Width(screen_width), GUILayout.Height(3.0f));
+                selectedExportXLIFFSpecification = (EXLIFFSpecification)EditorGUILayout.Popup("Export XLIFF version", (int)selectedExportXLIFFSpecification, xliffSpeficitations);
+                GUILayout.BeginHorizontal();
+                if (GUILayout.Button("Import from XLIFF...", GUILayout.Width((Screen.width - tableMargin) / 3.0f)))
+                {
+                    string file_path = EditorUtility.OpenFilePanel("Open XLIFF file", null, "xml");
+                    if (!string.IsNullOrWhiteSpace(file_path))
+                    {
+                        IXLIFF xliff = XLIFFImporter.ImportFromFile(file_path);
+                        if (xliff != null)
+                        {
+                            XLIFFImporterEditorWindowScript preview_translation_editor_window = GetWindow<XLIFFImporterEditorWindowScript>($"Importing XLIFF \"{ file_path }\"...", true, typeof(TranslatorEditorWindowScript));
+                            if (preview_translation_editor_window)
+                            {
+                                preview_translation_editor_window.XLIFF = xliff;
+                            }
+                        }
+                    }
+                }
+                if (GUILayout.Button("Export to XLIFF", GUILayout.Width((Screen.width - tableMargin) / 3.0f)))
+                {
+                    if (sourceLanguage == targetLanguage)
+                    {
+                        EditorUtility.DisplayDialog("Source and target languages are same", "Please specify atleast a different target language to export to XLIFF.", "OK");
+                    }
+                    else
+                    {
+                        string file_path = EditorUtility.SaveFilePanel("Save XLIFF file to...", null, "translations", "xml");
+                        if (!string.IsNullOrWhiteSpace(file_path))
+                        {
+                            IReadOnlyList<(StringTranslationObjectScript Translation, bool IsMissing)> string_translations = GetTranslations<StringTranslationObjectScript>(false);
+                            Dictionary<string, string> comments = new Dictionary<string, string>();
+                            Dictionary<string, string> source_translations = new Dictionary<string, string>();
+                            Dictionary<string, string> target_translations = new Dictionary<string, string>();
+                            Dictionary<SystemLanguage, Dictionary<string, string>> languages = new Dictionary<SystemLanguage, Dictionary<string, string>>
+                        {
+                            { sourceLanguage, source_translations },
+                            { targetLanguage, target_translations }
+                        };
+                            foreach ((StringTranslationObjectScript Translation, bool IsMissing) in string_translations)
+                            {
+                                string asset_path = AssetDatabase.GetAssetPath(Translation);
+                                if (!source_translations.ContainsKey(asset_path))
+                                {
+                                    source_translations.Add(asset_path, Translation.TryGetValue(sourceLanguage, out string source_translation) ? source_translation : string.Empty);
+                                    target_translations.Add(asset_path, Translation.TryGetValue(targetLanguage, out string target_translation) ? target_translation : string.Empty);
+                                }
+                                if (!string.IsNullOrWhiteSpace(Translation.Comment))
+                                {
+                                    if (!comments.ContainsKey(asset_path))
+                                    {
+                                        comments.Add(asset_path, Translation.Comment);
+                                    }
+                                }
+                            }
+                            IReadOnlyList<IXLIFFDocument> xliff_documents = new XLIFF(selectedExportXLIFFSpecification, sourceLanguage, languages, comments).XLIFFDocuments;
+                            if (xliff_documents.Count == 1)
+                            {
+                                XLIFFExporter.ExportXLIFFDocumetToFile(xliff_documents[0], file_path);
+                            }
+                            else
+                            {
+                                foreach (IXLIFFDocument xliff_document in xliff_documents)
+                                {
+                                    StringBuilder extended_file_path = new StringBuilder();
+                                    extended_file_path.Append(Path.GetFileNameWithoutExtension(file_path));
+                                    extended_file_path.Append('_');
+                                    extended_file_path.Append(ISO639.GetLanguageCodeFromLanguage(xliff_document.SourceLanguage).ToUpper());
+                                    extended_file_path.Append("To");
+                                    foreach (SystemLanguage target_language in xliff_document.TargetLanguages)
+                                    {
+                                        extended_file_path.Append(ISO639.GetLanguageCodeFromLanguage(target_language).ToUpper());
+                                    }
+                                    extended_file_path.Append(Path.GetExtension(file_path));
+                                    XLIFFExporter.ExportXLIFFDocumetToFile(xliff_document, extended_file_path.ToString());
+                                    extended_file_path.Clear();
+                                }
+                            }
+                        }
+                    }
+                }
+                if (GUILayout.Button("Copy translation form to clipboard", GUILayout.Width((Screen.width - tableMargin) / 3.0f)))
+                {
+                    StringBuilder sb = new StringBuilder("# Translation form\r\n\r\n## Description\r\nThis form is used to translate words into ");
+                    sb.Append(targetLanguage.ToString());
+                    sb.AppendLine(".");
+                    sb.AppendLine("\r\n\r\n## Words\r\n");
+                    UpdateTranslations();
+                    foreach ((StringTranslationObjectScript Translation, _) in stringTranslations)
+                    {
+                        if (!Translation.IsLanguageContained(targetLanguage))
+                        {
+                            sb.Append("### `");
+                            sb.Append(Translation.name);
+                            sb.AppendLine("`");
+                            sb.AppendLine();
+                            if (Translation.Comment != null)
+                            {
+                                if (Translation.Comment.Trim().Length > 0)
+                                {
+                                    sb.Append("Comment: ");
+                                    sb.AppendLine(Translation.Comment);
+                                }
+                            }
+                            foreach (TranslatedStringData translated_string in Translation.Translation.Values)
+                            {
+                                sb.Append("- In ");
+                                sb.Append(translated_string.Language.ToString());
+                                sb.Append(": \"");
+                                sb.Append(translated_string.Value);
+                                sb.AppendLine("\"");
+                            }
+                            sb.Append("\r\nWhat is it called in ");
+                            sb.Append(targetLanguage.ToString());
+                            sb.AppendLine("?: \r\n\r\n");
+                        }
+                    }
+                    sb.Append("Thank you for translating into ");
+                    sb.Append(targetLanguage.ToString());
+                    sb.AppendLine("!");
+                    GUIUtility.systemCopyBuffer = sb.ToString();
+                }
+                GUILayout.EndHorizontal();
+                GUILayout.Box(GUIContent.none, GUILayout.Width(screen_width), GUILayout.Height(3.0f));
             }
-            GUILayout.EndScrollView();
+            EditorGUILayout.EndFadeGroup();
+            EditorGUILayout.EndFoldoutHeaderGroup();
+            isShowingTranslations.target = EditorGUILayout.BeginFoldoutHeaderGroup(isShowingTranslations.target, "Translations");
+            if (EditorGUILayout.BeginFadeGroup(isShowingTranslations.faded))
+            {
+                GUILayout.Box(GUIContent.none, GUILayout.Width(screen_width), GUILayout.Height(3.0f));
+                DrawTargetAndSourceLanguagesPopups(true);
+                GUILayout.Box(GUIContent.none, GUILayout.Width(screen_width), GUILayout.Height(3.0f));
+                scrollPosition = GUILayout.BeginScrollView(scrollPosition);
+                if (stringTranslations == null)
+                {
+                    UpdateTranslations();
+                }
+                GUILayoutOption[] tab_button_gui_layout_options = new GUILayoutOption[] { GUILayout.Width((Screen.width - tableMargin) / tabs.Count), GUILayout.Height(20.0f) };
+                Color light_background_color = new Color(default_background_color.r, default_background_color.g, default_background_color.b * 1.25f, default_background_color.a);
+                GUILayout.BeginHorizontal();
+                for (int tab_index = 0; tab_index < tabs.Count; tab_index++)
+                {
+                    GUI.backgroundColor = (tab_index == selectedTabIndex) ? light_background_color : default_background_color;
+                    if (GUILayout.Button(tabs[tab_index].Name, tab_button_gui_layout_options))
+                    {
+                        selectedTabIndex = tab_index;
+                        GUI.FocusControl(null);
+                    }
+                }
+                GUI.backgroundColor = default_background_color;
+                GUILayout.EndHorizontal();
+                translationsTokenizedSearchField.Draw();
+                if ((selectedTabIndex >= 0) && (selectedTabIndex < tabs.Count))
+                {
+                    tabs[selectedTabIndex].OnTabDrawn();
+                }
+                GUILayout.EndScrollView();
+                GUILayout.Box(GUIContent.none, GUILayout.Width(screen_width), GUILayout.Height(3.0f));
+            }
+            EditorGUILayout.EndFadeGroup();
+            EditorGUILayout.EndFoldoutHeaderGroup();
         }
     }
 }

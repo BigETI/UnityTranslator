@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
-using UnityEditor.IMGUI.Controls;
 using UnityEngine;
 using UnityTranslator.Objects;
 
@@ -31,24 +30,14 @@ namespace UnityTranslatorEditor.EditorWindows
         private readonly Dictionary<SystemLanguage, Dictionary<string, (bool IsSelected, string ModifiedTranslation, string ModifiedComment, SystemLanguage PreviewLanguage)>> modifiedLanguages = new Dictionary<SystemLanguage, Dictionary<string, (bool IsSelected, string ModifiedTranslation, string ModifiedComment, SystemLanguage PreviewLanguage)>>();
 
         /// <summary>
-        /// Translation search tokens
-        /// </summary>
-        private readonly List<string> translationSearchTokens = new List<string>();
-
-        /// <summary>
         /// XLIFF
         /// </summary>
         private IXLIFF xliff;
 
         /// <summary>
-        /// Translations search field
+        /// Translations tokenized search field
         /// </summary>
-        private SearchField translationsSearchField;
-
-        /// <summary>
-        /// Translations search query
-        /// </summary>
-        private string translationsSearchQuery = string.Empty;
+        private TokenizedSearchField translationsTokenizedSearchField;
 
         /// <summary>
         /// Scroll position
@@ -99,7 +88,7 @@ namespace UnityTranslatorEditor.EditorWindows
         /// <summary>
         /// Gets invoked when editor window gets enabled
         /// </summary>
-        private void OnEnable() => translationsSearchField = new SearchField();
+        private void OnEnable() => translationsTokenizedSearchField = new TokenizedSearchField();
 
         /// <summary>
         /// Gets invoked when GUI needs to be drawn
@@ -182,7 +171,7 @@ namespace UnityTranslatorEditor.EditorWindows
                         keys.Clear();
                     }
                 }
-                SearchUtilities.DrawSearchField(translationsSearchField, ref translationsSearchQuery, translationSearchTokens);
+                translationsTokenizedSearchField.Draw();
                 foreach (SystemLanguage language in languageImportOrder)
                 {
                     GUILayout.Box(string.Empty, GUILayout.Width(Screen.width), GUILayout.Height(3.0f));
@@ -210,11 +199,11 @@ namespace UnityTranslatorEditor.EditorWindows
                                         (string_translation.Comment != comment)
                                     ) &&
                                     (
-                                        SearchUtilities.IsContainedInSearch(string_translation.name, translationSearchTokens) ||
-                                        SearchUtilities.IsContainedInSearch(translation.Value, translationSearchTokens) ||
-                                        SearchUtilities.IsContainedInSearch(comment, translationSearchTokens) ||
-                                        SearchUtilities.IsContainedInSearch(original_text, translationSearchTokens) ||
-                                        SearchUtilities.IsContainedInSearch(string_translation.Comment, translationSearchTokens)
+                                        translationsTokenizedSearchField.IsContainedInSearch(string_translation.name) ||
+                                        translationsTokenizedSearchField.IsContainedInSearch(translation.Value) ||
+                                        translationsTokenizedSearchField.IsContainedInSearch(comment) ||
+                                        translationsTokenizedSearchField.IsContainedInSearch(original_text) ||
+                                        translationsTokenizedSearchField.IsContainedInSearch(string_translation.Comment)
                                     )
                                 )
                                 {
@@ -236,24 +225,21 @@ namespace UnityTranslatorEditor.EditorWindows
                                     }
                                     GUILayout.BeginVertical();
                                     bool is_selected = GUILayout.Toggle(modified_translation.IsSelected, string.Empty);
+                                    EditorGUI.BeginDisabledGroup(true);
                                     EditorGUILayout.ObjectField(string_translation, typeof(StringTranslationObjectScript), true);
+                                    EditorGUI.EndDisabledGroup();
                                     GUILayout.BeginHorizontal();
                                     string input = EditorGUILayout.TextArea(modified_translation.ModifiedTranslation, GUILayout.Width(input_width), GUILayout.Height(60.0f));
                                     string comment_input = EditorGUILayout.TextArea(modified_translation.ModifiedComment, GUILayout.Height(60.0f));
                                     GUI.backgroundColor = modified_translation.IsSelected ? default_background_color : Color.red;
                                     GUILayout.EndHorizontal();
-                                    SystemLanguage preview_language = (SystemLanguage)EditorGUILayout.EnumPopup("↓", modified_translation.PreviewLanguage);
+                                    SystemLanguage preview_language = (SystemLanguage)EditorGUILayout.EnumPopup("↓ Replaces", modified_translation.PreviewLanguage);
                                     string original_translation = string_translation.Translation.GetValue(preview_language);
                                     GUILayout.BeginHorizontal();
-                                    if (EditorGUILayout.TextArea(original_translation, GUILayout.Width(input_width), GUILayout.Height(60.0f)) != original_translation)
-                                    {
-                                        GUI.FocusControl(null);
-                                    }
-                                    string original_comment = string_translation.Comment;
-                                    if (EditorGUILayout.TextArea(original_comment, GUILayout.Height(60.0f)) != original_comment)
-                                    {
-                                        GUI.FocusControl(null);
-                                    }
+                                    EditorGUI.BeginDisabledGroup(true);
+                                    EditorGUILayout.TextArea(original_translation, GUILayout.Width(input_width), GUILayout.Height(60.0f));
+                                    EditorGUILayout.TextArea(string_translation.Comment, GUILayout.Height(60.0f));
+                                    EditorGUI.EndDisabledGroup();
                                     GUI.backgroundColor = default_background_color;
                                     GUILayout.EndHorizontal();
                                     GUILayout.EndVertical();
@@ -266,9 +252,9 @@ namespace UnityTranslatorEditor.EditorWindows
                             }
                             else if
                             (
-                                SearchUtilities.IsContainedInSearch(Path.GetFileNameWithoutExtension(translation.Key), translationSearchTokens) ||
-                                SearchUtilities.IsContainedInSearch(translation.Value, translationSearchTokens) ||
-                                SearchUtilities.IsContainedInSearch(comment, translationSearchTokens)
+                                translationsTokenizedSearchField.IsContainedInSearch(Path.GetFileNameWithoutExtension(translation.Key)) ||
+                                translationsTokenizedSearchField.IsContainedInSearch(translation.Value) ||
+                                translationsTokenizedSearchField.IsContainedInSearch(comment)
                             )
                             {
                                 if (!modified_translations.TryGetValue(translation.Key, out (bool IsSelected, string ModifiedTranslation, string ModifiedComment, SystemLanguage PreviewLanguage) modified_translation))

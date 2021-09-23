@@ -117,12 +117,10 @@ namespace UnityTranslatorEditor
                     if (language.Key != SourceLanguage)
                     {
                         XmlDocument xliff_xml_document = new XmlDocument();
-                        XmlNode xliff_xml_node = xliff_xml_document.CreateNode(XmlNodeType.Element, "xliff", null);
+                        XmlNode xliff_xml_node = xliff_xml_document.CreateNode(XmlNodeType.Element, "xliff", "urn:oasis:names:tc:xliff:document:2.0");
                         XmlAttribute xliff_version_xml_attribute = xliff_xml_document.CreateAttribute("version");
-                        XmlAttribute xmlns_xml_attribute = xliff_xml_document.CreateAttribute("xmlns");
                         XmlAttribute source_language_xml_attribute = xliff_xml_document.CreateAttribute("srcLang");
                         XmlAttribute target_language_xml_attribute = xliff_xml_document.CreateAttribute("trgLang");
-                        xmlns_xml_attribute.Value = $"urn:oasis:names:tc:xliff:document:2.0";
                         xliff_version_xml_attribute.Value = "2.0";
                         XmlNode file_xml_node = xliff_xml_document.CreateNode(XmlNodeType.Element, "file", null);
                         XmlAttribute file_id_xml_attribute = xliff_xml_document.CreateAttribute("id");
@@ -170,7 +168,6 @@ namespace UnityTranslatorEditor
                         xliff_xml_node.Attributes.Append(xliff_version_xml_attribute);
                         xliff_xml_node.Attributes.Append(source_language_xml_attribute);
                         xliff_xml_node.Attributes.Append(target_language_xml_attribute);
-                        xliff_xml_node.Attributes.Append(xmlns_xml_attribute);
                         xliff_xml_document.AppendChild(xliff_xml_node);
                         ret.Add(new XLIFFDocument(SourceLanguage, new SystemLanguage[] { language.Key }, xliff_xml_document));
                     }
@@ -178,10 +175,6 @@ namespace UnityTranslatorEditor
             }
             else
             {
-                XmlDocument xliff_xml_document = new XmlDocument();
-                XmlNode xliff_xml_node = xliff_xml_document.CreateNode(XmlNodeType.Element, "xliff", null);
-                XmlAttribute xliff_version_xml_attribute = xliff_xml_document.CreateAttribute("version");
-                XmlAttribute xmlns_xml_attribute = xliff_xml_document.CreateAttribute("xmlns");
                 string xliff_version = specification switch
                 {
                     EXLIFFSpecification.Version1 => "1.0",
@@ -189,7 +182,9 @@ namespace UnityTranslatorEditor
                     EXLIFFSpecification.Version1Dot2 => "1.2",
                     _ => throw new ArgumentException($"Unknown XLIFF specification \"{ specification }\".")
                 };
-                xmlns_xml_attribute.Value = $"urn:oasis:names:tc:xliff:document:{ xliff_version }";
+                XmlDocument xliff_xml_document = new XmlDocument();
+                XmlNode xliff_xml_node = xliff_xml_document.CreateNode(XmlNodeType.Element, "xliff", $"urn:oasis:names:tc:xliff:document:{ xliff_version }");
+                XmlAttribute xliff_version_xml_attribute = xliff_xml_document.CreateAttribute("version");
                 xliff_version_xml_attribute.Value = xliff_version;
                 foreach (KeyValuePair<SystemLanguage, Dictionary<string, string>> language in languages)
                 {
@@ -262,7 +257,6 @@ namespace UnityTranslatorEditor
                     }
                 }
                 xliff_xml_node.Attributes.Append(xliff_version_xml_attribute);
-                xliff_xml_node.Attributes.Append(xmlns_xml_attribute);
                 xliff_xml_document.AppendChild(xliff_xml_node);
                 ret.Add(new XLIFFDocument(SourceLanguage, languages.Keys, xliff_xml_document));
             }
