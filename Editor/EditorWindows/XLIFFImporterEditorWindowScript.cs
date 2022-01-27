@@ -88,12 +88,12 @@ namespace UnityTranslatorEditor.EditorWindows
         /// <summary>
         /// Gets invoked when editor window gets enabled
         /// </summary>
-        private void OnEnable() => translationsTokenizedSearchField = new TokenizedSearchField();
+        protected virtual void OnEnable() => translationsTokenizedSearchField = new TokenizedSearchField();
 
         /// <summary>
         /// Gets invoked when GUI needs to be drawn
         /// </summary>
-        private void OnGUI()
+        protected virtual void OnGUI()
         {
             float input_width = Screen.width * 0.5f;
             scrollPosition = GUILayout.BeginScrollView(scrollPosition);

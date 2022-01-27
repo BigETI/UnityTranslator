@@ -36,6 +36,14 @@ namespace UnityTranslatorEditor.EditorWindows
         };
 
         /// <summary>
+        /// Translation asset folders
+        /// </summary>
+        private static readonly string[] translationAssetFolders = new string[]
+        {
+            "Assets"
+        };
+
+        /// <summary>
         /// Edit audio clip translation dictionary
         /// </summary>
         private readonly Dictionary<int, (AudioClip Value, string Comment)> editAudioClipTranslationDictionary = new Dictionary<int, (AudioClip Value, string Comment)>();
@@ -185,7 +193,7 @@ namespace UnityTranslatorEditor.EditorWindows
         private IReadOnlyList<(T Translation, bool IsMissing)> GetTranslations<T>(bool isShowingMissingTranslationsOnly) where T : UnityEngine.Object, IBaseTranslationObject
         {
             List<(T Translation, bool IsMissing)> translations = new List<(T Translation, bool IsMissing)>();
-            string[] translation_guids = AssetDatabase.FindAssets("t:" + typeof(T).Name);
+            string[] translation_guids = AssetDatabase.FindAssets("t:" + typeof(T).Name, translationAssetFolders);
             if (translation_guids != null)
             {
                 foreach (string translation_guid in translation_guids)
@@ -532,7 +540,7 @@ namespace UnityTranslatorEditor.EditorWindows
         /// <summary>
         /// Gets invoked when editor window gets enabled
         /// </summary>
-        private void OnEnable()
+        protected virtual void OnEnable()
         {
             translationsTokenizedSearchField = new TokenizedSearchField();
             isShowingFilesImporterExporter = new AnimBool();
@@ -544,7 +552,7 @@ namespace UnityTranslatorEditor.EditorWindows
         /// <summary>
         /// Gets invoked when GUI needs to be drawn
         /// </summary>
-        private void OnGUI()
+        protected virtual void OnGUI()
         {
             tabs ??= new (string Name, TabDrawnDelegate OnTabDrawn)[]
             {

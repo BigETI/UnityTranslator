@@ -1,8 +1,8 @@
 {
     "name": "com.bigeti.translator",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "displayName": "Unity Translator",
-    "description": "This package contains a translation library for Unity.",
+    "description": "The Unity Translator package enables you to localize your game easily.",
     "dependencies": {},
     "keywords": [
         "translator"
